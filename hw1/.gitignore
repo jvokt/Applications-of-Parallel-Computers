@@ -1,0 +1,7 @@
+*.o
+
+matmul-blas
+matmul-mine
+matmul-basic
+matmul-blocked
+matmul-f2c
