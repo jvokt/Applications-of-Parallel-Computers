@@ -45,7 +45,7 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 		to_kdgemm_A(lda, A, kernel_A);
 		to_kdgemm_B(lda, B, kernel_B);
 		// Clear matrix C for accumulation
-		memset(C, 0, M * N * sizeof(double));
+		memset(kernel_C, 0, M * N * sizeof(double));
 
 		// Execute kernel
 		kdgemm(kernel_A, kernel_B, kernel_C);
