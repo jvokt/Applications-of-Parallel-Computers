@@ -44,9 +44,9 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 	{
 		if (kernel_A == 0)
 		{
-			kernel_A = _mm_malloc(DIM_M * DIM_P * sizeof(double), 16);
-			kernel_B = _mm_malloc(DIM_P * DIM_N * sizeof(double), 16);
-			kernel_C = _mm_malloc(DIM_M * DIM_N * sizeof(double), 16);
+			kernel_A = _mm_malloc(KERNEL_M * KERNEL_P * sizeof(double), 16);
+			kernel_B = _mm_malloc(KERNEL_P * KERNEL_N * sizeof(double), 16);
+			kernel_C = _mm_malloc(KERNEL_M * KERNEL_N * sizeof(double), 16);
 		}
 
 		// Copy optimization to kernel memory
