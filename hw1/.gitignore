@@ -6,3 +6,6 @@ matmul-basic
 matmul-blocked
 matmul-f2c
 ktimer
+.project
+.cproject
+*.pdf
