@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "kdgemm.h"
 
 const char* dgemm_desc = "My awesome dgemm.";
