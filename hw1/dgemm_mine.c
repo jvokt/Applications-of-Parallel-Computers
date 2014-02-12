@@ -11,9 +11,9 @@ const char* dgemm_desc = "My awesome dgemm.";
 //#endif
 
 // Memory for kernel operations
-double* kernel_A = _mm_malloc(DIM_M * DIM_P * sizeof(double), 16);
-double* kernel_B = _mm_malloc(DIM_P * DIM_N * sizeof(double), 16);
-double* kernel_C = _mm_malloc(DIM_M * DIM_N * sizeof(double), 16);
+double* kernel_A = 0;
+double* kernel_B = 0;
+double* kernel_C = 0;
 
 /*
   A is M-by-K
@@ -42,6 +42,13 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 	}
 	else
 	{
+		if (kernel_A == 0)
+		{
+			kernel_A = _mm_malloc(DIM_M * DIM_P * sizeof(double), 16);
+			kernel_B = _mm_malloc(DIM_P * DIM_N * sizeof(double), 16);
+			kernel_C = _mm_malloc(DIM_M * DIM_N * sizeof(double), 16);
+		}
+
 		// Copy optimization to kernel memory
 		to_kdgemm_A(lda, A, kernel_A);
 		to_kdgemm_B(lda, B, kernel_B);
