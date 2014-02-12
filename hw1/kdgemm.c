@@ -56,6 +56,13 @@ void to_kdgemm_B(int ldB, const double* restrict B, double * restrict Bk)
            Bk[i+j*P] = B[i+j*ldB];
 }
 
+void to_kdgemm_C(int ldC, const double* restrict C, double * restrict Ck)
+{
+    for (int j = 0; j < N; ++j)
+       for (int i = 0; i < M; ++i)
+           Ck[i+j*P] = C[i+j*ldC];
+}
+
 void from_kdgemm_C(int ldC, const double* restrict Ck, double * restrict C)
 {
     for (int j = 0; j < N; ++j)
