@@ -2,9 +2,9 @@
 
 const char* dgemm_desc = "My awesome dgemm.";
 
-#ifndef BLOCK_SIZE
+//#ifndef BLOCK_SIZE
 #define BLOCK_SIZE ((int) 4)
-#endif
+//#endif
 
 // Memory for kernel operations
 double kernel_A[KERNEL_N * KERNEL_M] __attribute__ ((aligned (16)));
@@ -23,7 +23,7 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 {
 	int i, j, k;
 
-	if (M != BLOCK_SIZE || N != BLOCK_SIZE || K != BLOCK_SIZE)
+	if (M != KERNEL_M || N != KERNEL_N || K != KERNEL_P)
 	{
 		// Do basic method
 		for (i = 0; i < M; ++i) {
@@ -41,6 +41,8 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 		// Copy optimization to kernel memory
 		to_kdgemm_A(lda, A, kernel_A);
 		to_kdgemm_B(lda, B, kernel_B);
+		// Clear matrix C for accumulation
+		memset(C, 0, M * N * sizeof(double));
 
 		// Execute kernel
 		kdgemm(kernel_A, kernel_B, kernel_C);
