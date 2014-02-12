@@ -1,22 +1,18 @@
 #include <nmmintrin.h>
+#include "kdgemm.h"
 
-/*
- * Dimensions for a "kernel" multiply.  We use define statements in
- * order to make sure these are treated as compile-time constants
- * (which the optimizer likes)
- */
-#define M 4
-#define N 4
-#define P 4
+#define N KERNEL_N
+#define M KERNEL_M
+#define P KERNEL_P
 
 /*
  * The ktimer driver expects these variables to be set to whatever
  * the dimensions of a kernel multiply are.  It uses them both for
  * space allocation and for flop rate computations.
  */
-int DIM_M=M;
-int DIM_N=N;
-int DIM_P=P;
+int DIM_M=KERNEL_M;
+int DIM_N=KERNEL_N;
+int DIM_P=KERNEL_P;
 
 /*
  * Block matrix multiply kernel (simple fixed-size case).

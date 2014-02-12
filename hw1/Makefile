@@ -5,7 +5,7 @@
 # to play with, you can put them in an appropriately-named Makefile.in.
 # For example, the default setup has a Makefile.in.icc and Makefile.in.gcc.
 
-PLATFORM=gcc
+PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
 .PHONY:	all
@@ -15,6 +15,9 @@ all:	matmul-mine matmul-basic matmul-blocked matmul-blas matmul-f2c
 # Rules to build the drivers
 
 matmul-%: $(OBJS) dgemm_%.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+	
+matmul-mine: $(OBJS) dgemm_%.o kdgemm.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 matmul-f2c: $(OBJS) dgemm_f2c.o dgemm_f2c_desc.o fdgemm.o
