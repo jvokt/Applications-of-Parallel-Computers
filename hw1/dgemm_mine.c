@@ -1,8 +1,15 @@
+#include "kdgemm.h"
+
 const char* dgemm_desc = "My awesome dgemm.";
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE ((int) 16)
+#define BLOCK_SIZE ((int) 4)
 #endif
+
+// Memory for kernel operations
+double kernel_A[KERNEL_N * KERNEL_M] __attribute__ ((aligned (__BIGGEST_ALIGNMENT__)));
+double kernel_B[KERNEL_N * KERNEL_M] __attribute__ ((aligned (__BIGGEST_ALIGNMENT__)));
+double kernel_C[KERNEL_N * KERNEL_M] __attribute__ ((aligned (__BIGGEST_ALIGNMENT__)));
 
 /*
   A is M-by-K
@@ -11,24 +18,23 @@ const char* dgemm_desc = "My awesome dgemm.";
 
   lda is the leading dimension of the matrix (the M of square_dgemm).
 */
-void inline basic_dgemm(const int lda, const int M, const int N, const int K,
-                 	    const double *A, const double *B, double *C)
+void basic_dgemm(const int lda, const int M, const int N, const int K,
+                 const double *A, const double *B, double *C)
 {
-    int i, j, k;
-    for (i = 0; i < M; ++i) {
-        for (j = 0; j < N; ++j) {
-            double cij = C[j*lda+i];
-            for (k = 0; k < K; ++k) {
-                cij += A[k*lda+i] * B[j*lda+k];
-            }
-            C[j*lda+i] = cij;
-        }
-    }
+	// Copy optimization to kernel memory
+	to_kdgemm_A(lda, A, kernel_A);
+	to_kdgemm_B(lda, B, kernel_B);
+
+	// Execute kernel
+	kdgemm(kernel_A, kernel_B, kernel_C);
+
+	// Copy back from kernel memory
+	from_kdgemm_C(lda, kernel_C, C);
 }
 
-void inline do_block(const int lda,
-              	  	 const double *A, const double *B, double *C,
-              	  	 const int i, const int j, const int k)
+void do_block(const int lda,
+              const double *A, const double *B, double *C,
+              const int i, const int j, const int k)
 {
     const int M = (i+BLOCK_SIZE > lda? lda-i : BLOCK_SIZE);
     const int N = (j+BLOCK_SIZE > lda? lda-j : BLOCK_SIZE);
