@@ -44,7 +44,7 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 		// Copy optimization to kernel memory
 		to_kdgemm_A(lda, A, kernel_A);
 		to_kdgemm_B(lda, B, kernel_B);
-		to_kdgemm_B(lda, C, kernel_C);
+		to_kdgemm_C(lda, C, kernel_C);
 
 		// Execute kernel
 		kdgemm(kernel_A, kernel_B, kernel_C);
