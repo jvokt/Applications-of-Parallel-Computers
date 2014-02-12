@@ -17,7 +17,7 @@ all:	matmul-mine matmul-basic matmul-blocked matmul-blas matmul-f2c
 matmul-%: $(OBJS) dgemm_%.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 	
-matmul-mine: $(OBJS) dgemm_%.o kdgemm.o
+matmul-mine: $(OBJS) kdgemm.o dgemm_mine.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 matmul-f2c: $(OBJS) dgemm_f2c.o dgemm_f2c_desc.o fdgemm.o
