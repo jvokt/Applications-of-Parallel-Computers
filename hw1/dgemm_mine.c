@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "kdgemm.h"
 
 const char* dgemm_desc = "My awesome dgemm.";
@@ -10,9 +11,9 @@ const char* dgemm_desc = "My awesome dgemm.";
 //#endif
 
 // Memory for kernel operations
-double kernel_A[KERNEL_N * KERNEL_M] __attribute__ ((aligned (16)));
-double kernel_B[KERNEL_N * KERNEL_M] __attribute__ ((aligned (16)));
-double kernel_C[KERNEL_N * KERNEL_M] __attribute__ ((aligned (16)));
+double* kernel_A = _mm_malloc(DIM_M * DIM_P * sizeof(double), 16);
+double* kernel_B = _mm_malloc(DIM_P * DIM_N * sizeof(double), 16);
+double* kernel_C = _mm_malloc(DIM_M * DIM_N * sizeof(double), 16);
 
 /*
   A is M-by-K
@@ -45,7 +46,7 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 		to_kdgemm_A(lda, A, kernel_A);
 		to_kdgemm_B(lda, B, kernel_B);
 		// Clear matrix C for accumulation
-		memset(kernel_C, 0, M * N * sizeof(double));
+		memset(kernel_C, 0, KERNEL_M * KERNEL_N * sizeof(double));
 
 		// Execute kernel
 		kdgemm(kernel_A, kernel_B, kernel_C);
