@@ -14,14 +14,14 @@ const char* dgemm_desc = "My awesome dgemm.";
 void inline basic_dgemm(const int lda, const int M, const int N, const int K,
                  	    const double *A, const double *B, double *C)
 {
-    int i, j, k;
+    int i, j, k, ka;
     for (i = 0; i < M; ++i) {
         for (j = 0; j < N * lda; j += lda) {
             double cij = C[j+i];
 #pragma unroll(4)
-            for (k = 0; k < K * lda; k += lda) {
-                cij += A[k+i] * B[j+k];
-            }
+            for (k = 0, ka=0; k < K; ++k, ka += lda) {
+				cij += A[ka+i] * B[j+k];
+			}
             C[j+i] = cij;
         }
     }
