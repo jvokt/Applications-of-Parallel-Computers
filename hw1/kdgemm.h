@@ -28,6 +28,8 @@ void to_kdgemm_A(int ldA, const double* restrict A, double * restrict Ak);
 
 void to_kdgemm_B(int ldB, const double* restrict B, double * restrict Bk);
 
+void to_kdgemm_C(int ldC, const double* restrict C, double * restrict Ck);
+
 void from_kdgemm_C(int ldC, const double* restrict Ck, double * restrict C);
 
 #endif // KDGEMM_H_
