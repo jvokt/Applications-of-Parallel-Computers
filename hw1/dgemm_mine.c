@@ -76,6 +76,18 @@ const char* dgemm_desc = "My awesome dgemm.";
 #define L3_BLOCK_SIZE 384 // (KERNEL_SIZE_ALIGNED(L3_CACHE_SIZE, L3_CACHE_UTILIZATION))
 #endif
 
+#if L1_KERNEL_P != KERNEL_P
+#error Cannot have differing kernel sizes
+#endif
+
+#if KERNEL_M != 2
+#error Cannot have kernel size that is not 2
+#endif
+
+#if KERNEL_N != 2
+#error Cannot have kernel size that is not 2
+#endif
+
 /*******************************************************************************
  * Standard calculations
  */

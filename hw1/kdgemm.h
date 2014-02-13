@@ -8,7 +8,7 @@
  */
 #define KERNEL_M 2
 #define KERNEL_N 2
-#define KERNEL_P 190
+#define KERNEL_P 32
 
 /*
  * Block matrix multiply kernel (simple fixed-size case).
