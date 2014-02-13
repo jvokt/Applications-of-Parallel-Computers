@@ -44,6 +44,10 @@ void kdgemm(const double * restrict A,
     __assume_aligned(B, 16);
     __assume_aligned(C, 16);
 
+    double temp = C[1];
+	C[1] = C[3];
+	C[3] = temp;
+
     // Load diagonal and off-diagonals
     __m128d cd = _mm_load_pd(C+0);
     __m128d co = _mm_load_pd(C+2);
@@ -95,7 +99,7 @@ void kdgemm(const double * restrict A,
     _mm_store_pd(C+0, cd);
     _mm_store_pd(C+2, co);
 
-    double temp = C[1];
+    temp = C[1];
     C[1] = C[3];
     C[3] = temp;
 
