@@ -132,17 +132,33 @@ int main(int argc, char** argv)
     // Initialize the input matrices and convert to kernel format
     matrix_init(A, DIM_M, DIM_P);
     matrix_init(B, DIM_P, DIM_N);
+    /*
+    printf("Print A\n");
+    for (int i = 0; i < DIM_M*DIM_P; i++)
+      printf("%g\n",A[i]);
+    printf("Print B\n");
+    for (int i = 0; i < DIM_N*DIM_P; i++)
+      printf("%g\n",B[i]);
+    */
     to_kdgemm_A(DIM_M, A, Ak);
     to_kdgemm_B(DIM_P, B, Bk);
 
     // Clear the kernel scratch output, run the kernel, convert to col major
     matrix_clear(Ck, DIM_M, DIM_N);
+    /*
+    printf("Print Ak\n");
+    for (int i = 0; i < DIM_M*DIM_P; i++)
+      printf("%g\n",Ak[i]);
+    printf("Print Bk\n");
+    for (int i = 0; i < DIM_N*DIM_P; i++)
+      printf("%g\n",Bk[i]);
+    */
     kdgemm(Ak, Bk, Ck);
     from_kdgemm_C(DIM_M, Ck, C);
 
     // Check for agreement
     double max_diff = check_kdgemm(A, B, C);
-
+    diff_kdgemm(A, B, C);
     // Print kernel dimensions, megaflop rate, and error from check
     printf("%u,%u,%u,%lg,%0.0e\n", DIM_M, DIM_P, DIM_N, 
            time_dgemm(Ak, Bk, Ck),
