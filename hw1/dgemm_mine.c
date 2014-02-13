@@ -201,7 +201,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 				const int cur_main_accum_width = CALC_CUR_BLOCK_WIDTH(cur_main_accum_pos, L3_BLOCK_SIZE, M);
 				const int num_l2_blocks_accum = CALC_NUM_BLOCKS(cur_main_accum_width, L2_BLOCK_SIZE);
 
-				memset(l3_mem_C, 0, 3 * L3_BLOCK_SIZE * L3_BLOCK_SIZE);
+				memset(l3_mem, 0, 3 * L3_BLOCK_SIZE * L3_BLOCK_SIZE * sizeof(double));
 
 				// Copy the data from main memory to the l3 buffer for caching (copy optimization 1)
 				for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
@@ -209,17 +209,17 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 					// Copy C
 					memcpy(l3_mem_C + iter_copy_row * L3_BLOCK_SIZE,
 							C + M * (cur_main_row_pos + iter_copy_row) + cur_main_col_pos,
-							cur_main_col_width);
+							cur_main_col_width * sizeof(double));
 					// Copy A
 					memcpy(l3_mem_A + iter_copy_row * L3_BLOCK_SIZE,
 							A + M * (cur_main_row_pos + iter_copy_row) + cur_main_accum_pos,
-							cur_main_accum_width);
+							cur_main_accum_width * sizeof(double));
 					// Copy B
 					if(iter_copy_row < cur_main_accum_width)
 					{
 						memcpy(l3_mem_B + iter_copy_row * L3_BLOCK_SIZE,
 								B + M * (cur_main_accum_pos + iter_copy_row) + cur_main_col_pos,
-								cur_main_col_width);
+								cur_main_col_width * sizeof(double));
 					}
 				}
 
@@ -228,8 +228,8 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 				// Zero rows for A,C
 				for(int iter_clear_row = cur_main_row_width; iter_clear_row < cur_main_row_width + 2 && iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
 				{
-					memset(l3_mem_C + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE);
-					memset(l3_mem_A + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE);
+					memset(l3_mem_C + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE * sizeof(double));
+					memset(l3_mem_A + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE * sizeof(double));
 				}
 				// Zero rows for B
 				for(int iter_clear_row = cur_main_accum_width; iter_clear_row < cur_main_accum_width + 2 && iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
@@ -336,7 +336,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 					// Copy C
 					memcpy(C + M * (cur_main_row_pos + iter_copy_row) + cur_main_col_pos,
 							l3_mem_C + iter_copy_row * L3_BLOCK_SIZE,
-							cur_main_col_width);
+							cur_main_col_width * sizeof(double));
 				}
 			}
 		}
