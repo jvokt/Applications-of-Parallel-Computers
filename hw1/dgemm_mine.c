@@ -221,6 +221,36 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 					}
 				}
 
+				// Zero the memory boundaries if applicable (used to pad kernel if final block not divisible by 2)
+				// Zero rows for A,C
+				for(int iter_clear_row = cur_main_row_width; iter_clear_row < cur_main_row_width + 2 && iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
+				{
+					memset(l3_mem_C + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE);
+					memset(l3_mem_A + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE);
+				}
+				// Zero rows for B
+				for(int iter_clear_row = cur_main_accum_width; iter_clear_row < cur_main_accum_width + 2 && iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
+				{
+					memset(l3_mem_B + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE);
+				}
+				// Zero cols for B,C
+				for(int iter_clear_row = 0; iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
+				{
+					for(int iter_clear_col = cur_main_col_width; iter_clear_col < cur_main_col_width + 2 && iter_clear_col < L3_BLOCK_SIZE; ++iter_clear_col)
+					{
+						l3_mem_C[iter_clear_col + iter_clear_row * L3_BLOCK_SIZE] = 0;
+						l3_mem_B[iter_clear_col + iter_clear_row * L3_BLOCK_SIZE] = 0;
+					}
+				}
+				// Zero cols for A
+				for(int iter_clear_row = 0; iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
+				{
+					for(int iter_clear_col = cur_main_accum_width; iter_clear_col < cur_main_accum_width + 2 && iter_clear_col < L3_BLOCK_SIZE; ++iter_clear_col)
+					{
+						l3_mem_A[iter_clear_col + iter_clear_row * L3_BLOCK_SIZE] = 0;
+					}
+				}
+
 				// Perform blocked multiplication with L2_BLOCK_SIZE sized blocks
 				for(int iter_l3_row_block = 0; iter_l3_row_block < num_l2_blocks_row; ++iter_l3_row_block)
 				{
@@ -276,13 +306,19 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// into the kernel memory buffers
 
 												// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
+												// Because of L3 memory size and the zero-ing operation, this will fit in the
+												// kernel space and have 0s where invalid
 												// TODO
+												to_kdgemm_A(L3_BLOCK_SIZE, l3_mem_A + cur_l3_row_pos, kernel_A);
+												to_kdgemm_B(L3_BLOCK_SIZE, l3_mem_B, kernel_B);
+												to_kdgemm_C(L3_BLOCK_SIZE, l3_mem_C, kernel_C);
 
 												// Perform kernel operations
-												// TODO
+												kdgemm(kernel_A, kernel_B, kernel_C);
 
 												// Copy results out of kernel memory buffers
 												// TODO
+												from_kdgemm_C(L3_BLOCK_SIZE, kernel_C, l3_mem_C);
 											}
 										}
 									}
