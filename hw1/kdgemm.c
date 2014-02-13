@@ -112,28 +112,57 @@ void kdgemm(const double * restrict A,
 
 void to_kdgemm_A(int ldA, const double* restrict A, double * restrict Ak)
 {
-    for (int j = 0; j < P; ++j)
-       for (int i = 0; i < M; ++i)
-           Ak[i+j*M] = A[i+j*ldA];
+	to_kdgemm_A_sized(ldA, A, Ak, M, P);
+}
+
+void to_kdgemm_A_sized(int ldA, const double* restrict A, double * restrict Ak, int row_width, int col_width)
+{
+	for (int j = 0; j < col_width; ++j)
+	   for (int i = 0; i < row_width; ++i)
+		   Ak[i+j*M] = A[i+j*ldA];
+	for (int j = col_width; j < P; ++j)
+		   for (int i = row_width; i < M; ++i)
+			   Ak[i+j*M] = 0;
 }
 
 void to_kdgemm_B(int ldB, const double* restrict B, double * restrict Bk)
 {
-  for (int i = 0; i < P; ++i)
-    for (int j = 0; j < N; ++j)
-           Bk[j+i*N] = B[i+j*ldB];
+	to_kdgemm_B_sized(ldB, B, Bk, P, N);
+}
+
+void to_kdgemm_B_sized(int ldB, const double* restrict B, double * restrict Bk, int row_width, int col_width)
+{
+	for (int i = 0; i < row_width; ++i)
+	    for (int j = 0; j < col_width; ++j)
+	           Bk[j+i*N] = B[i+j*ldB];
+	for (int i = row_width; i < P; ++i)
+		for (int j = col_width; j < N; ++j)
+			   Bk[j+i*N] = 0;
 }
 
 void to_kdgemm_C(int ldC, const double* restrict C, double * restrict Ck)
 {
-    for (int j = 0; j < N; ++j)
-       for (int i = 0; i < M; ++i)
-           Ck[i+j*M] = C[i+j*ldC];
+	to_kdgemm_C_sized(ldC, C, Ck, M, N);
+}
+
+void to_kdgemm_C_sized(int ldC, const double* restrict C, double * restrict Ck, int row_width, int col_width)
+{
+	for (int j = 0; j < col_width; ++j)
+	   for (int i = 0; i < row_width; ++i)
+		   Ck[i+j*M] = C[i+j*ldC];
+	for (int j = col_width; j < N; ++j)
+		   for (int i = row_width; i < M; ++i)
+			   Ck[i+j*M] = 0;
 }
 
 void from_kdgemm_C(int ldC, const double* restrict Ck, double * restrict C)
 {
-    for (int j = 0; j < N; ++j)
-       for (int i = 0; i < M; ++i)
-           C[i+j*ldC] = Ck[i+j*M];
+	from_kdgemm_C_sized(ldC, Ck, C, M, N);
+}
+
+void from_kdgemm_C_sized(int ldC, const double* restrict Ck, double * restrict C, int row_width, int col_width)
+{
+	for (int j = 0; j < col_width; ++j)
+	   for (int i = 0; i < row_width; ++i)
+		   C[i+j*ldC] = Ck[i+j*M];
 }

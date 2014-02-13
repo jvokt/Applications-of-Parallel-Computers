@@ -103,9 +103,6 @@ const char* dgemm_desc = "My awesome dgemm.";
  * Memory segments
  */
 
-// Memory for matmul operations using the L3 cache
-double l3_mem[3 * L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-
 // Memory for the 3 buffers for kernel operations using the L1 cache
 double kernel_A[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 double kernel_B[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
@@ -174,11 +171,6 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 	// boundaries are aligned in memory, which means once copied into aligned
 	// memory the alignment won't be an issue
 
-	// Get pointers to the L3 cache memory positions
-	double* l3_mem_A = l3_mem;
-	double* l3_mem_B = l3_mem + L3_BLOCK_SIZE * L3_BLOCK_SIZE;
-	double* l3_mem_C = l3_mem + L3_BLOCK_SIZE * L3_BLOCK_SIZE + L3_BLOCK_SIZE * L3_BLOCK_SIZE;
-
 	// Get the number of blocks l3 blocks in M
 	const int num_l3_blocks = CALC_NUM_BLOCKS(M, L3_BLOCK_SIZE);
 
@@ -200,34 +192,6 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 				const int cur_main_accum_pos = iter_main_accum_block * L3_BLOCK_SIZE;
 				const int cur_main_accum_width = CALC_CUR_BLOCK_WIDTH(cur_main_accum_pos, L3_BLOCK_SIZE, M);
 				const int num_l2_blocks_accum = CALC_NUM_BLOCKS(cur_main_accum_width, L2_BLOCK_SIZE);
-
-				memset(l3_mem, 0, 3 * L3_BLOCK_SIZE * L3_BLOCK_SIZE * sizeof(double));
-
-				// Copy the data from main memory to the l3 buffer for caching (copy optimization 1)
-				// Copy for C
-				for(int iter_copy_col = 0; iter_copy_col < cur_main_col_width; ++iter_copy_col)
-				{
-					for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
-					{
-						l3_mem_C[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col] = C[cur_main_row_pos + iter_copy_row + M * (iter_copy_col + cur_main_col_pos)];
-					}
-				}
-				// Copy for A
-				for(int iter_copy_col = 0; iter_copy_col < cur_main_accum_width; ++iter_copy_col)
-				{
-					for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
-					{
-						l3_mem_A[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col] = A[cur_main_row_pos + iter_copy_row + M * (iter_copy_col + cur_main_accum_pos)];
-					}
-				}
-				// Copy for B
-				for(int iter_copy_col = 0; iter_copy_col < cur_main_col_width; ++iter_copy_col)
-				{
-					for(int iter_copy_row = 0; iter_copy_row < cur_main_accum_width; ++iter_copy_row)
-					{
-						l3_mem_B[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col] = B[cur_main_accum_pos + iter_copy_row + M * (iter_copy_col + cur_main_col_pos)];
-					}
-				}
 
 				// Perform blocked multiplication with L2_BLOCK_SIZE sized blocks
 				for(int iter_l3_col_block = 0; iter_l3_col_block < num_l2_blocks_col; ++iter_l3_col_block)
@@ -286,30 +250,21 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
 												// Because of L3 memory size and the zero-ing operation, this will fit in the
 												// kernel space and have 0s where invalid
-												to_kdgemm_C(L3_BLOCK_SIZE, l3_mem_C + L3_BLOCK_SIZE * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C);
-												to_kdgemm_A(L3_BLOCK_SIZE, l3_mem_A + L3_BLOCK_SIZE * (cur_l3_accum_pos + cur_l2_accum_pos) + + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A);
-												to_kdgemm_B(L3_BLOCK_SIZE, l3_mem_B + L3_BLOCK_SIZE * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B);
+												to_kdgemm_C_sized(M, C + M * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C, cur_kernel_row_width, cur_kernel_col_width);
+												to_kdgemm_A_sized(M, A + M * (cur_l3_accum_pos + cur_l2_accum_pos) + + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_kernel_col_width);
+												to_kdgemm_B_sized(M, B + M * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_kernel_row_width, cur_kernel_col_width);
 
 												// Perform kernel operations
 												kdgemm(kernel_A, kernel_B, kernel_C);
 
 												// Copy results out of kernel memory buffers
-												from_kdgemm_C(L3_BLOCK_SIZE, kernel_C, l3_mem_C + L3_BLOCK_SIZE * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos);
+												from_kdgemm_C_sized(M, kernel_C, C + M * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, cur_kernel_row_width, cur_kernel_col_width);
 											}
 										}
 									}
 								}
 							}
 						}
-					}
-				}
-
-				// Copy the result from l3 buffer to the main memory
-				for(int iter_copy_col = 0; iter_copy_col < cur_main_col_width; ++iter_copy_col)
-				{
-					for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
-					{
-						C[cur_main_row_pos + iter_copy_row + M * (iter_copy_col + cur_main_col_pos)] = l3_mem_C[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col];
 					}
 				}
 			}
