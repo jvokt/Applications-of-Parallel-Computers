@@ -251,8 +251,8 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// Because of L3 memory size and the zero-ing operation, this will fit in the
 												// kernel space and have 0s where invalid
 												to_kdgemm_C_sized(M, C + M * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C, cur_kernel_row_width, cur_kernel_col_width);
-												to_kdgemm_A_sized(M, A + M * (cur_l3_accum_pos + cur_l2_accum_pos) + + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_kernel_col_width);
-												to_kdgemm_B_sized(M, B + M * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_kernel_row_width, cur_kernel_col_width);
+												to_kdgemm_A_sized(M, A + M * (cur_l3_accum_pos + cur_l2_accum_pos) + + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, L1_KERNEL_P);
+												to_kdgemm_B_sized(M, B + M * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, L1_KERNEL_P, cur_kernel_col_width);
 
 												// Perform kernel operations
 												kdgemm(kernel_A, kernel_B, kernel_C);
