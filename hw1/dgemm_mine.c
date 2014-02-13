@@ -305,12 +305,12 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 				}
 
 				// Copy the result from l3 buffer to the main memory
-				for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
+				for(int iter_copy_col = 0; iter_copy_col < cur_main_col_width; ++iter_copy_col)
 				{
-					// Copy C
-					memcpy(C + M * (cur_main_row_pos + iter_copy_row) + cur_main_col_pos,
-							l3_mem_C + iter_copy_row * L3_BLOCK_SIZE,
-							cur_main_col_width * sizeof(double));
+					for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
+					{
+						C[cur_main_row_pos + iter_copy_row + M * (iter_copy_col + cur_main_col_pos)] = l3_mem_C[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col];
+					}
 				}
 			}
 		}
