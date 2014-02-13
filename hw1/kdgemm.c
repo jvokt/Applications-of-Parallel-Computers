@@ -124,7 +124,7 @@ void to_kdgemm_C(int ldC, const double* restrict C, double * restrict Ck)
 {
     for (int j = 0; j < N; ++j)
        for (int i = 0; i < M; ++i)
-           Ck[i+j*P] = C[i+j*ldC];
+           Ck[i+j*M] = C[i+j*ldC];
 }
 
 void from_kdgemm_C(int ldC, const double* restrict Ck, double * restrict C)
