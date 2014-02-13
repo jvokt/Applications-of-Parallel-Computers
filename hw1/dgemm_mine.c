@@ -183,17 +183,17 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 	const int num_l3_blocks = CALC_NUM_BLOCKS(M, L3_BLOCK_SIZE);
 
 	// Perform blocked multiplication with L3_BLOCK_SIZE sized blocks
-	for(int iter_l3_row_block = 0; iter_l3_row_block < num_l3_blocks; ++iter_l3_row_block)
+	for(int iter_main_col_block = 0; iter_main_col_block < num_l3_blocks; ++iter_main_col_block)
 	{
-		const int cur_main_row_pos = iter_l3_row_block * L3_BLOCK_SIZE;
-		const int cur_main_row_width = CALC_CUR_BLOCK_WIDTH(cur_main_row_pos, L3_BLOCK_SIZE, M);
-		const int num_l2_blocks_row = CALC_NUM_BLOCKS(cur_main_row_width, L2_BLOCK_SIZE);
+		const int cur_main_col_pos = iter_main_col_block * L3_BLOCK_SIZE;
+		const int cur_main_col_width = CALC_CUR_BLOCK_WIDTH(cur_main_col_pos, L3_BLOCK_SIZE, M);
+		const int num_l2_blocks_col = CALC_NUM_BLOCKS(cur_main_col_width, L2_BLOCK_SIZE);
 
-		for(int iter_main_col_block = 0; iter_main_col_block < num_l3_blocks; ++iter_main_col_block)
+		for(int iter_l3_row_block = 0; iter_l3_row_block < num_l3_blocks; ++iter_l3_row_block)
 		{
-			const int cur_main_col_pos = iter_main_col_block * L3_BLOCK_SIZE;
-			const int cur_main_col_width = CALC_CUR_BLOCK_WIDTH(cur_main_col_pos, L3_BLOCK_SIZE, M);
-			const int num_l2_blocks_col = CALC_NUM_BLOCKS(cur_main_col_width, L2_BLOCK_SIZE);
+			const int cur_main_row_pos = iter_l3_row_block * L3_BLOCK_SIZE;
+			const int cur_main_row_width = CALC_CUR_BLOCK_WIDTH(cur_main_row_pos, L3_BLOCK_SIZE, M);
+			const int num_l2_blocks_row = CALC_NUM_BLOCKS(cur_main_row_width, L2_BLOCK_SIZE);
 
 			for(int iter_main_accum_block = 0; iter_main_accum_block < num_l3_blocks; ++iter_main_accum_block)
 			{
@@ -204,69 +204,43 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 				memset(l3_mem, 0, 3 * L3_BLOCK_SIZE * L3_BLOCK_SIZE * sizeof(double));
 
 				// Copy the data from main memory to the l3 buffer for caching (copy optimization 1)
-				for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
+				// Copy for C
+				for(int iter_copy_col = 0; iter_copy_col < cur_main_col_width; ++iter_copy_col)
 				{
-					// Copy C
-					memcpy(l3_mem_C + iter_copy_row * L3_BLOCK_SIZE,
-							C + M * (cur_main_row_pos + iter_copy_row) + cur_main_col_pos,
-							cur_main_col_width * sizeof(double));
-					// Copy A
-					memcpy(l3_mem_A + iter_copy_row * L3_BLOCK_SIZE,
-							A + M * (cur_main_row_pos + iter_copy_row) + cur_main_accum_pos,
-							cur_main_accum_width * sizeof(double));
-					// Copy B
-					if(iter_copy_row < cur_main_accum_width)
+					for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
 					{
-						memcpy(l3_mem_B + iter_copy_row * L3_BLOCK_SIZE,
-								B + M * (cur_main_accum_pos + iter_copy_row) + cur_main_col_pos,
-								cur_main_col_width * sizeof(double));
+						l3_mem_C[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col] = C[cur_main_row_pos + iter_copy_row + M * (iter_copy_col + cur_main_col_pos)];
 					}
 				}
-
-				/*
-				// Zero the memory boundaries if applicable (used to pad kernel if final block not divisible by 2)
-				// Zero rows for A,C
-				for(int iter_clear_row = cur_main_row_width; iter_clear_row < cur_main_row_width + 2 && iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
+				// Copy for A
+				for(int iter_copy_col = 0; iter_copy_col < cur_main_accum_width; ++iter_copy_col)
 				{
-					memset(l3_mem_C + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE * sizeof(double));
-					memset(l3_mem_A + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE * sizeof(double));
-				}
-				// Zero rows for B
-				for(int iter_clear_row = cur_main_accum_width; iter_clear_row < cur_main_accum_width + 2 && iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
-				{
-					memset(l3_mem_B + iter_clear_row * L3_BLOCK_SIZE, 0, L3_BLOCK_SIZE);
-				}
-				// Zero cols for B,C
-				for(int iter_clear_row = 0; iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
-				{
-					for(int iter_clear_col = cur_main_col_width; iter_clear_col < cur_main_col_width + 2 && iter_clear_col < L3_BLOCK_SIZE; ++iter_clear_col)
+					for(int iter_copy_row = 0; iter_copy_row < cur_main_row_width; ++iter_copy_row)
 					{
-						l3_mem_C[iter_clear_col + iter_clear_row * L3_BLOCK_SIZE] = 0;
-						l3_mem_B[iter_clear_col + iter_clear_row * L3_BLOCK_SIZE] = 0;
+						l3_mem_A[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col] = A[cur_main_row_pos + iter_copy_row + M * (iter_copy_col + cur_main_accum_pos)];
 					}
 				}
-				// Zero cols for A
-				for(int iter_clear_row = 0; iter_clear_row < L3_BLOCK_SIZE; ++iter_clear_row)
+				// Copy for B
+				for(int iter_copy_col = 0; iter_copy_col < cur_main_col_width; ++iter_copy_col)
 				{
-					for(int iter_clear_col = cur_main_accum_width; iter_clear_col < cur_main_accum_width + 2 && iter_clear_col < L3_BLOCK_SIZE; ++iter_clear_col)
+					for(int iter_copy_row = 0; iter_copy_row < cur_main_accum_width; ++iter_copy_row)
 					{
-						l3_mem_A[iter_clear_col + iter_clear_row * L3_BLOCK_SIZE] = 0;
+						l3_mem_B[iter_copy_row + L3_BLOCK_SIZE * iter_copy_col] = B[cur_main_accum_pos + iter_copy_row + M * (iter_copy_col + cur_main_col_pos)];
 					}
 				}
-				*/
 
 				// Perform blocked multiplication with L2_BLOCK_SIZE sized blocks
-				for(int iter_l3_row_block = 0; iter_l3_row_block < num_l2_blocks_row; ++iter_l3_row_block)
+				for(int iter_l3_col_block = 0; iter_l3_col_block < num_l2_blocks_col; ++iter_l3_col_block)
 				{
-					const int cur_l3_row_pos = iter_l3_row_block * L2_BLOCK_SIZE;
-					const int cur_l3_row_width = CALC_CUR_BLOCK_WIDTH(cur_l3_row_pos, L2_BLOCK_SIZE, cur_main_row_width);
-					const int num_l1_blocks_row = CALC_NUM_BLOCKS(cur_l3_row_width, L1_KERNEL_P);
+					const int cur_l3_col_pos = iter_l3_col_block * L2_BLOCK_SIZE;
+					const int cur_l3_col_width = CALC_CUR_BLOCK_WIDTH(cur_l3_col_pos, L2_BLOCK_SIZE, cur_main_col_width);
+					const int num_l1_blocks_col = CALC_NUM_BLOCKS(cur_l3_col_width, L1_KERNEL_P);
 
-					for(int iter_l3_col_block = 0; iter_l3_col_block < num_l2_blocks_col; ++iter_l3_col_block)
+					for(int iter_l3_row_block = 0; iter_l3_row_block < num_l2_blocks_row; ++iter_l3_row_block)
 					{
-						const int cur_l3_col_pos = iter_l3_col_block * L2_BLOCK_SIZE;
-						const int cur_l3_col_width = CALC_CUR_BLOCK_WIDTH(cur_l3_col_pos, L2_BLOCK_SIZE, cur_main_col_width);
-						const int num_l1_blocks_col = CALC_NUM_BLOCKS(cur_l3_col_width, L1_KERNEL_P);
+						const int cur_l3_row_pos = iter_l3_row_block * L2_BLOCK_SIZE;
+						const int cur_l3_row_width = CALC_CUR_BLOCK_WIDTH(cur_l3_row_pos, L2_BLOCK_SIZE, cur_main_row_width);
+						const int num_l1_blocks_row = CALC_NUM_BLOCKS(cur_l3_row_width, L1_KERNEL_P);
 
 						for(int iter_l3_accum_block = 0; iter_l3_accum_block < num_l2_blocks_accum; ++iter_l3_accum_block)
 						{
@@ -275,17 +249,17 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 							const int num_l1_blocks_accum = CALC_NUM_BLOCKS(cur_l3_accum_width, L1_KERNEL_P);
 
 							// Perform blocked multiplication with L1_KERNEL_P sized blocks
-							for(int iter_l2_row_block = 0; iter_l2_row_block < num_l1_blocks_row; ++iter_l2_row_block)
+							for(int iter_l2_col_block = 0; iter_l2_col_block < num_l2_blocks_col; ++iter_l2_col_block)
 							{
-								const int cur_l2_row_pos = iter_l2_row_block * L1_KERNEL_P;
-								const int cur_l2_row_width = CALC_CUR_BLOCK_WIDTH(cur_l2_row_pos, L1_KERNEL_P, cur_l3_row_width);
-								const int num_kernel_blocks_row = CALC_NUM_BLOCKS(cur_l2_row_width, 2);
+								const int cur_l2_col_pos = iter_l2_col_block * L1_KERNEL_P;
+								const int cur_l2_col_width = CALC_CUR_BLOCK_WIDTH(cur_l2_col_pos, L1_KERNEL_P, cur_l3_col_width);
+								const int num_kernel_blocks_col = CALC_NUM_BLOCKS(cur_l2_col_width, 2);
 
-								for(int iter_l2_col_block = 0; iter_l2_col_block < num_l2_blocks_col; ++iter_l2_col_block)
+								for(int iter_l2_row_block = 0; iter_l2_row_block < num_l1_blocks_row; ++iter_l2_row_block)
 								{
-									const int cur_l2_col_pos = iter_l2_col_block * L1_KERNEL_P;
-									const int cur_l2_col_width = CALC_CUR_BLOCK_WIDTH(cur_l2_col_pos, L1_KERNEL_P, cur_l3_col_width);
-									const int num_kernel_blocks_col = CALC_NUM_BLOCKS(cur_l2_col_width, 2);
+									const int cur_l2_row_pos = iter_l2_row_block * L1_KERNEL_P;
+									const int cur_l2_row_width = CALC_CUR_BLOCK_WIDTH(cur_l2_row_pos, L1_KERNEL_P, cur_l3_row_width);
+									const int num_kernel_blocks_row = CALC_NUM_BLOCKS(cur_l2_row_width, 2);
 
 									for(int iter_l2_accum_block = 0; iter_l2_accum_block < num_l1_blocks_accum; ++iter_l2_accum_block)
 									{
@@ -296,15 +270,15 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 										// of size [2x2] = [L1_KERNEL_Px2] [2xL1_KERNEL_P]
 
 										// Perform kernel operations for each [2x2] block within the L1_KERNEL_P sized block
-										for(int iter_kernel_row_block = 0; iter_kernel_row_block < num_kernel_blocks_row; ++iter_kernel_row_block)
+										for(int iter_kernel_col_block = 0; iter_kernel_col_block < num_kernel_blocks_col; ++iter_kernel_col_block)
 										{
-											const int cur_kernel_row_pos = 2 * iter_kernel_row_block;
-											const int cur_kernel_row_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_row_pos, 2, cur_l2_row_width);
+											const int cur_kernel_col_pos = 2 * iter_kernel_col_block;
+											const int cur_kernel_col_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_col_pos, 2, cur_l2_col_width);
 
-											for(int iter_kernel_col_block = 0; iter_kernel_col_block < num_kernel_blocks_col; ++iter_kernel_col_block)
+											for(int iter_kernel_row_block = 0; iter_kernel_row_block < num_kernel_blocks_row; ++iter_kernel_row_block)
 											{
-												const int cur_kernel_col_pos = 2 * iter_kernel_col_block;
-												const int cur_kernel_col_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_col_pos, 2, cur_l2_col_width);
+												const int cur_kernel_row_pos = 2 * iter_kernel_row_block;
+												const int cur_kernel_row_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_row_pos, 2, cur_l2_row_width);
 
 												// Now have complete offset into l3 memory buffer from which to copy data
 												// into the kernel memory buffers
@@ -312,15 +286,15 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
 												// Because of L3 memory size and the zero-ing operation, this will fit in the
 												// kernel space and have 0s where invalid
-												to_kdgemm_C(L3_BLOCK_SIZE, l3_mem_C + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos + L3_BLOCK_SIZE * (cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos), kernel_C);
-												to_kdgemm_A(L3_BLOCK_SIZE, l3_mem_A + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos + L3_BLOCK_SIZE * (cur_l3_accum_pos + cur_l2_accum_pos), kernel_A);
-												to_kdgemm_B(L3_BLOCK_SIZE, l3_mem_B + cur_l3_accum_pos + cur_l2_accum_pos + L3_BLOCK_SIZE * (cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos), kernel_B);
+												to_kdgemm_C(L3_BLOCK_SIZE, l3_mem_C + L3_BLOCK_SIZE * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C);
+												to_kdgemm_A(L3_BLOCK_SIZE, l3_mem_A + L3_BLOCK_SIZE * (cur_l3_accum_pos + cur_l2_accum_pos) + + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A);
+												to_kdgemm_B(L3_BLOCK_SIZE, l3_mem_B + L3_BLOCK_SIZE * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B);
 
 												// Perform kernel operations
 												kdgemm(kernel_A, kernel_B, kernel_C);
 
 												// Copy results out of kernel memory buffers
-												from_kdgemm_C(L3_BLOCK_SIZE, kernel_C, l3_mem_C + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos + L3_BLOCK_SIZE * (cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos));
+												from_kdgemm_C(L3_BLOCK_SIZE, kernel_C, l3_mem_C + L3_BLOCK_SIZE * (cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos);
 											}
 										}
 									}
