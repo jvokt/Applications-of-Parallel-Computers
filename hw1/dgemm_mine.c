@@ -308,17 +308,15 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
 												// Because of L3 memory size and the zero-ing operation, this will fit in the
 												// kernel space and have 0s where invalid
-												// TODO
-												to_kdgemm_A(L3_BLOCK_SIZE, l3_mem_A + cur_l3_row_pos, kernel_A);
-												to_kdgemm_B(L3_BLOCK_SIZE, l3_mem_B, kernel_B);
-												to_kdgemm_C(L3_BLOCK_SIZE, l3_mem_C, kernel_C);
+												to_kdgemm_C(L3_BLOCK_SIZE, l3_mem_C + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos + L3_BLOCK_SIZE * (cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos), kernel_C);
+												to_kdgemm_A(L3_BLOCK_SIZE, l3_mem_A + cur_l3_accum_pos + cur_l2_accum_pos + L3_BLOCK_SIZE * (cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos), kernel_A);
+												to_kdgemm_B(L3_BLOCK_SIZE, l3_mem_B + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos + L3_BLOCK_SIZE * (cur_l3_accum_pos + cur_l2_accum_pos), kernel_B);
 
 												// Perform kernel operations
 												kdgemm(kernel_A, kernel_B, kernel_C);
 
 												// Copy results out of kernel memory buffers
-												// TODO
-												from_kdgemm_C(L3_BLOCK_SIZE, kernel_C, l3_mem_C);
+												from_kdgemm_C(L3_BLOCK_SIZE, kernel_C, l3_mem_C + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos + L3_BLOCK_SIZE * (cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos));
 											}
 										}
 									}
