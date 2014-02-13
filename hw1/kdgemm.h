@@ -6,9 +6,9 @@
  * order to make sure these are treated as compile-time constants
  * (which the optimizer likes)
  */
-#define KERNEL_M 4
-#define KERNEL_N 4
-#define KERNEL_P 4
+#define KERNEL_M 2
+#define KERNEL_N 2
+#define KERNEL_P 190
 
 /*
  * Block matrix multiply kernel (simple fixed-size case).
