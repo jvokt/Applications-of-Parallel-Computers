@@ -249,7 +249,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 							const int num_l1_blocks_accum = CALC_NUM_BLOCKS(cur_l3_accum_width, L1_KERNEL_P);
 
 							// Perform blocked multiplication with L1_KERNEL_P sized blocks
-							for(int iter_l2_col_block = 0; iter_l2_col_block < num_l2_blocks_col; ++iter_l2_col_block)
+							for(int iter_l2_col_block = 0; iter_l2_col_block < num_l1_blocks_col; ++iter_l2_col_block)
 							{
 								const int cur_l2_col_pos = iter_l2_col_block * L1_KERNEL_P;
 								const int cur_l2_col_width = CALC_CUR_BLOCK_WIDTH(cur_l2_col_pos, L1_KERNEL_P, cur_l3_col_width);
