@@ -108,8 +108,6 @@ double* kernel_A = 0;
 double* kernel_B = 0;
 double* kernel_C = 0;
 
-
-
 void square_dgemm(const int M, const double *A, const double *B, double *C)
 {
 	// This function works by performing recursively blocked matrix multiply.
@@ -124,9 +122,9 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 
 	if(kernel_A == 0)
 	{
-		kernel_A = _mm_malloc(2 * L1_KERNEL_P, 16);
-		kernel_B = _mm_malloc(2 * L1_KERNEL_P, 16);
-		kernel_C = _mm_malloc(2 * 2, 16);
+		kernel_A = _mm_malloc(2 * L1_KERNEL_P * sizeof(double), 16);
+		kernel_B = _mm_malloc(2 * L1_KERNEL_P * sizeof(double), 16);
+		kernel_C = _mm_malloc(2 * 2 * sizeof(double), 16);
 	}
 
 	// Get the number of blocks l3 blocks in M
