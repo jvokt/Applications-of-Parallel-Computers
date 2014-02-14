@@ -108,56 +108,7 @@ double kernel_A[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 double kernel_B[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 double kernel_C[2 * 2] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 
-/*
-  A is M-by-K
-  B is K-by-N
-  C is M-by-N
 
-  lda is the leading dimension of the matrix (the M of square_dgemm).
-*/
-void basic_dgemm(const int lda, const int M, const int N, const int K,
-                 const double *A, const double *B, double *C)
-{
-	int i, j, k;
-
-	if (M != KERNEL_M || N != KERNEL_N || K != KERNEL_P)
-	{
-		// Do basic method
-		for (i = 0; i < M; ++i) {
-			for (j = 0; j < N; ++j) {
-				double cij = C[j*lda+i];
-				for (k = 0; k < K; ++k) {
-					cij += A[k*lda+i] * B[j*lda+k];
-				}
-				C[j*lda+i] = cij;
-			}
-		}
-	}
-	else
-	{
-		// Copy optimization to kernel memory
-		to_kdgemm_A(lda, A, kernel_A);
-		to_kdgemm_B(lda, B, kernel_B);
-		to_kdgemm_C(lda, C, kernel_C);
-
-		// Execute kernel
-		kdgemm(kernel_A, kernel_B, kernel_C);
-
-		// Copy back from kernel memory
-		from_kdgemm_C(lda, kernel_C, C);
-	}
-}
-
-void do_block(const int lda,
-              const double *A, const double *B, double *C,
-              const int i, const int j, const int k)
-{
-    const int M = (i+BLOCK_SIZE > lda? lda-i : BLOCK_SIZE);
-    const int N = (j+BLOCK_SIZE > lda? lda-j : BLOCK_SIZE);
-    const int K = (k+BLOCK_SIZE > lda? lda-k : BLOCK_SIZE);
-    basic_dgemm(lda, M, N, K,
-                A + i + k*lda, B + k + j*lda, C + i + j*lda);
-}
 
 void square_dgemm(const int M, const double *A, const double *B, double *C)
 {
@@ -250,8 +201,8 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
 												// Because of L3 memory size and the zero-ing operation, this will fit in the
 												// kernel space and have 0s where invalid
-												to_kdgemm_A_sized(M, A + M * (cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_l2_col_width);
-												to_kdgemm_B_sized(M, B + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_l2_row_width, cur_kernel_col_width);
+												to_kdgemm_A_sized(M, A + M * (cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_l2_accum_width);
+												to_kdgemm_B_sized(M, B + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_l2_accum_width, cur_kernel_col_width);
 												to_kdgemm_C_sized(M, C + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C, cur_kernel_row_width, cur_kernel_col_width);
 
 												// Perform kernel operations
