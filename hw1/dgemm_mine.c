@@ -12,7 +12,7 @@ const char* dgemm_desc = "My awesome dgemm.";
 #define BYTE_ALIGNMENT 16
 
 #ifndef L1_KERNEL_P
-#define L1_KERNEL_P 32 // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
+#define L1_KERNEL_P 16 // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
 #endif
 
 #if L1_KERNEL_P != KERNEL_P
