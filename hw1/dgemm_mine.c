@@ -87,8 +87,8 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 						// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
 						// Because of L3 memory size and the zero-ing operation, this will fit in the
 						// kernel space and have 0s where invalid
-						to_kdgemm_A_sized(M, A + M * (cur_accum) + (cur_row + cur_kernel_row), kernel_A, cur_kernel_row_num, cur_col_num);
-						to_kdgemm_B_sized(M, B + M * (cur_col + cur_kernel_col) + (cur_accum), kernel_B, cur_row_num, cur_kernel_col_num);
+						to_kdgemm_A_sized(M, A + M * (cur_accum) + (cur_row + cur_kernel_row), kernel_A, cur_kernel_row_num, cur_accum_num);
+						to_kdgemm_B_sized(M, B + M * (cur_col + cur_kernel_col) + (cur_accum), kernel_B, cur_accum_num, cur_kernel_col_num);
 						to_kdgemm_C_sized(M, C + M * (cur_col + cur_kernel_col) + (cur_row + cur_kernel_row), kernel_C, cur_kernel_row_num, cur_kernel_col_num);
 
 						// Perform kernel operations
