@@ -18,74 +18,27 @@ const char* dgemm_desc = "My awesome dgemm.";
 #define BYTE_ALIGNMENT 16
 #endif
 
-#ifndef NUM_MAT
-#define NUM_MAT 3
-#endif
-
-/*******************************************************************************
- * Cache size and utilization definitions
- */
-
-#ifndef L1_CACHE_SIZE
-#define L1_CACHE_SIZE ((int) 32768) // 32KB
-#endif
-
-#ifndef L1_CACHE_UTILIZATION
-#define L1_CACHE_UTILIZATION ((double) 0.5)
-#endif
-
-#ifndef L2_CACHE_SIZE
-#define L2_CACHE_SIZE ((int) 262144) // 256KB
-#endif
-
-#ifndef L2_CACHE_UTILIZATION
-#define L2_CACHE_UTILIZATION ((double) 0.5)
-#endif
-
-#ifndef L3_CACHE_SIZE
-#define L3_CACHE_SIZE ((int) 4194304) // 4MB
-#endif
-
-#ifndef L3_CACHE_UTILIZATION
-#define L3_CACHE_UTILIZATION ((double) 0.75)
-#endif
-
-
-/*******************************************************************************
- * Kernel and block size calculations
- */
-
-// Calculate the size of kernels
-// block_size_bytes = (int)(floor(sqrt(CACHE_SIZE - 3*16) * CACHE_UTIL / (3 * sizeof(double))))
-// block_size_bytes = block_size_bytes + (16 - (block_size_bytes % 16))
-#define KERNEL_SIZE_UNALIGNED(CACHE_SIZE, CACHE_UTIL) ((int)(floor(sqrt(CACHE_SIZE - NUM_MAT * BYTE_ALIGNMENT) * CACHE_UTIL / (NUM_MAT * sizeof(double)))))
-#define KERNEL_SIZE_ALIGNED(CACHE_SIZE, CACHE_UTIL) (KERNEL_SIZE_UNALIGNED(CACHE_SIZE, CACHE_UTIL) + BYTE_ALIGNMENT - (KERNEL_SIZE_UNALIGNED(CACHE_SIZE, CACHE_UTIL) % BYTE_ALIGNMENT))
-
 // Define the kernels as the closest value rounded to be the smallest multiple
 // of the lower block such that the block is larger
 
-#ifndef L1_KERNEL_P
-#define L1_KERNEL_P 16 // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
+#ifndef L1_BLOCK_SIZE
+#define L1_BLOCK_SIZE KERNEL_P
+#endif
+
+#ifndef L2_BLOCK_MULT
+#define L2_BLOCK_MULT 2
 #endif
 
 #ifndef L2_BLOCK_SIZE
-#define L2_BLOCK_SIZE 32 // (KERNEL_SIZE_ALIGNED(L2_CACHE_SIZE, L2_CACHE_UTILIZATION))
+#define L2_BLOCK_SIZE (L1_BLOCK_SIZE * L2_BLOCK_MULT)
+#endif
+
+#ifndef L3_BLOCK_MULT
+#define L3_BLOCK_MULT 2
 #endif
 
 #ifndef L3_BLOCK_SIZE
-#define L3_BLOCK_SIZE 64 // (KERNEL_SIZE_ALIGNED(L3_CACHE_SIZE, L3_CACHE_UTILIZATION))
-#endif
-
-#if L1_KERNEL_P != KERNEL_P
-#error Cannot have differing kernel sizes
-#endif
-
-#if KERNEL_M != 2
-#error Cannot have kernel size that is not 2
-#endif
-
-#if KERNEL_N != 2
-#error Cannot have kernel size that is not 2
+#define L3_BLOCK_SIZE (L2_BLOCK_SIZE * L3_BLOCK_MULT)
 #endif
 
 /*******************************************************************************
@@ -103,123 +56,336 @@ const char* dgemm_desc = "My awesome dgemm.";
  * Memory segments
  */
 
-// Memory for the 3 buffers for kernel operations using the L1 cache
-double kernel_A[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double kernel_B[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double kernel_C[2 * 2] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+// Memory for the 3 buffers for L3 level blocking, converted for zero padding and transposed
+double l3mem_A[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l3mem_B[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l3mem_C[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 
+// Memory for the 3 buffers for L2 level blocking, already padded and transposed
+double l2mem_A[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l2mem_B[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l2mem_C[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 
+// Memory for the 3 buffers for L1 level blocking, already padded and transposed
+double l1mem_A[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l1mem_B[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l1mem_C[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 
+// Memory for the 3 buffers for kernel operations, already padded and transposed
+double kernel_A[KERNEL_M * KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double kernel_B[KERNEL_N * KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double kernel_C[KERNEL_M * KERNEL_N] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+
+/*******************************************************************************
+ * Copies data from main memory to the first L3 segment, transposes A so that it
+ * is used more efficiently, and pads the boundaries with zeros if not a
+ * multiple of M or N
+ * @param A The memory segment to copy from
+ * @param B The memory segment to copy from
+ * @param C The memory segment to copy from
+ * @param M The size of the memory segment
+ * @param mem_row The row to copy from
+ * @param mem_num_rows The number of rows to copy
+ * @param mem_col The column to copy from
+ * @param mem_num_cols The number of cols to copy
+ * @param mem_acc The accumulator to copy from
+ * @param mem_num_accs The number of accs to run
+ */
+void copy_main_to_l3(double* A, double* B, double* C, const int M,
+					 const int mem_row, const int mem_num_rows,
+					 const int mem_col, const int mem_num_cols,
+					 const int mem_acc, const int mem_num_accs)
+{
+	// TODO
+}
+
+/*******************************************************************************
+ * Copies data to main memory from the L3 segment
+ * @param C The memory segment to copy to
+ * @param M The size of the memory segment
+ * @param mem_row The row to copy from
+ * @param mem_num_rows The number of rows to copy
+ * @param mem_col The column to copy from
+ * @param mem_num_cols The number of cols to copy
+ */
+void copy_main_from_l3(double* C, const int M,
+					 const int mem_row, const int mem_num_rows,
+					 const int mem_col, const int mem_num_cols)
+{
+	// TODO
+}
+
+/*******************************************************************************
+ * Copies data from one cache memory size to another. Direction cur -> sub
+ * @param lmem_A The current memory buffer for A
+ * @param lmem_B The current memory buffer for B
+ * @param lmem_C The current memory buffer for C
+ * @param lmem_size The size of the current memory buffer
+ * @param lmem_row The row number to copy from
+ * @param lmem_num_rows The number of rows to copy
+ * @param lmem_col The col number to copy from
+ * @param lmem_num_cols The number of cols to copy
+ * @param lmem_acc The accumulator number to copy from
+ * @param lmem_num_acc The number of acc rows to copy
+ * @param lmem_sub_A The sub memory buffer to copy to
+ * @param lmem_sub_B The sub memory buffer to copy to
+ * @param lmem_sub_C The sub memory buffer to copy to
+ * @param lmem_sub_size The size of the sub memory buffer
+ */
+void copy_lmem_to_sublmem(restrict double* lmem_A,
+					   	  restrict double* lmem_B,
+					   	  restrict double* lmem_C,
+					   	  const int lmem_size,
+					   	  const int lmem_row,
+					   	  const int lmem_num_rows,
+					   	  const int lmem_col,
+					   	  const int lmem_num_cols,
+					   	  const int lmem_acc,
+					   	  const int lmem_num_acc,
+					   	  restrict double* lmem_sub_A,
+					   	  restrict double* lmem_sub_B,
+					   	  restrict double* lmem_sub_C,
+					   	  const int lmem_sub_size)
+{
+	// TODO
+}
+
+/*******************************************************************************
+ * Copies data from one cache memory size to another. Direction sub -> current
+ * @param lmem_A The current memory buffer for A
+ * @param lmem_B The current memory buffer for B
+ * @param lmem_C The current memory buffer for C
+ * @param lmem_size The size of the current memory buffer
+ * @param lmem_row The row number to copy from
+ * @param lmem_num_rows The number of rows to copy
+ * @param lmem_col The col number to copy from
+ * @param lmem_num_cols The number of cols to copy
+ * @param lmem_acc The accumulator number to copy from
+ * @param lmem_num_acc The number of acc rows to copy
+ * @param lmem_sub_A The sub memory buffer to copy to
+ * @param lmem_sub_B The sub memory buffer to copy to
+ * @param lmem_sub_C The sub memory buffer to copy to
+ * @param lmem_sub_size The size of the sub memory buffer
+ */
+void copy_lmem_from_sublmem(restrict double* lmem_A,
+							restrict double* lmem_B,
+						    restrict double* lmem_C,
+						    const int lmem_size,
+						    const int lmem_row,
+						    const int lmem_num_rows,
+						    const int lmem_col,
+						    const int lmem_num_cols,
+						    const int lmem_acc,
+						    const int lmem_num_acc,
+						    restrict double* lmem_sub_A,
+						    restrict double* lmem_sub_B,
+						    restrict double* lmem_sub_C,
+						    const int lmem_sub_size)
+{
+	// TODO
+}
+
+/*******************************************************************************
+ * Copies data from the L1 memory segment at the given row,col to the kernel
+ * memory for use in executing the kernel
+ * @param kernel_row The row to copy from
+ * @param kernel_col The col to copy from
+ */
+void copy_to_kernel_mem(const int kernel_row, const int kernel_col)
+{
+	// TODO
+}
+
+/*******************************************************************************
+ * Copies data from the kernel memory to L1 memory at the given row,col to the kernel
+ * memory for use in executing the kernel
+ * @param kernel_row The row to copy to
+ * @param kernel_col The col to copy to
+ */
+void copy_from_kernel_mem(const int kernel_row, const int kernel_col)
+{
+	// TODO
+}
+
+/*******************************************************************************
+ * Performs the blocked recursive matrix multiply at the given cache level
+ * @param lmem_A The A memory block of size lmem_size^2
+ * @param lmem_B The B memory block of size lmem_size^2
+ * @param lmem_C The C memory block of size lmem_size^2
+ * @param lmem_size The size of the lmem blocks is lmem_size^2
+ * @param lmem_level The cache level of lmem
+ * @param lmem_num_fill_row The num of rows in the lmem blocks that are relevant
+ * @param lmem_num_fill_col The num of cols in the lmem blocks that are relevant
+ * @param lmem_num_fill_acc The num of accumulator row/cols in the lmem blocks that are relevant
+ * @param lmem_sub_A The A sub block to use for further blocking
+ * @param lmem_sub_B The B sub block to use for further blocking
+ * @param lmem_sub_C The C sub block to use for further blocking
+ * @param lmem_sub_size The size of the lmem_sub blocks is lmem_sub_size^2
+ * @param lmem_sub_level The cache level of lmem_sub
+ */
+void square_dgemm_recursive_cache_level(restrict double* lmem_A,
+										restrict double* lmem_B,
+										restrict double* lmem_C,
+										const int lmem_size,
+										const int lmem_level,
+										const int lmem_num_fill_row,
+										const int lmem_num_fill_col,
+										const int lmem_num_fill_acc,
+										restrict double* lmem_sub_A,
+										restrict double* lmem_sub_B,
+										restrict double* lmem_sub_C,
+										const int lmem_sub_size,
+										const int lmem_sub_level)
+{
+	// The lmem blocks are aligned in memory, use for caching improvements
+	__assume_aligned(lmem_A, BYTE_ALIGNMENT);
+	__assume_aligned(lmem_B, BYTE_ALIGNMENT);
+	__assume_aligned(lmem_C, BYTE_ALIGNMENT);
+	__assume_aligned(lmem_sub_A, BYTE_ALIGNMENT);
+	__assume_aligned(lmem_sub_B, BYTE_ALIGNMENT);
+	__assume_aligned(lmem_sub_C, BYTE_ALIGNMENT);
+
+	// Check the level, if it is 1 then it is time to run the kernel, otherwise
+	// it requires recursion
+	if(lmem_level != 1)
+	{
+		// Not yet on the L1 sized blocks, must recurse
+
+		// Calculate the number of sub blocks
+		const int num_sub_row_blocks = CALC_NUM_BLOCKS(lmem_num_fill_row, lmem_sub_size);
+		const int num_sub_col_blocks = CALC_NUM_BLOCKS(lmem_num_fill_col, lmem_sub_size);
+		const int num_sub_acc_blocks = CALC_NUM_BLOCKS(lmem_num_fill_acc, lmem_sub_size);
+
+		// Perform blocked operations
+		for(int iter_row_block = 0; iter_row_block < num_sub_row_blocks; ++iter_row_block)
+		{
+			const int cur_row = iter_row_block * lmem_sub_size;
+			const int cur_num_rows = CALC_CUR_BLOCK_WIDTH(cur_row, lmem_sub_size, lmem_num_fill_row);
+
+			for(int iter_col_block = 0; iter_col_block < num_sub_col_blocks; ++iter_col_block)
+			{
+				const int cur_col = iter_col_block * lmem_sub_size;
+				const int cur_num_cols = CALC_CUR_BLOCK_WIDTH(cur_col, lmem_sub_size, lmem_num_fill_col);
+
+				for(int iter_acc_block = 0; iter_acc_block < num_sub_acc_blocks; ++iter_acc_block)
+				{
+					const int cur_acc = iter_acc_block * lmem_sub_size;
+					const int cur_num_accs = CALC_CUR_BLOCK_WIDTH(cur_acc, lmem_sub_size, lmem_num_fill_acc);
+
+					// Now have the position and size within lmem for which to
+					// copy to lmem_sub and recurse
+
+					// Copy from lmem to lmem_sub
+					copy_lmem_to_sublmem(lmem_A, lmem_B, lmem_C, lmem_size,
+									  	 cur_row, cur_num_rows, cur_col, cur_num_cols, cur_acc, cur_num_accs,
+									  	 lmem_sub_A, lmem_sub_B, lmem_sub_C, lmem_sub_size);
+
+					// Recurse
+					// Get the next level
+					const int lmem_rec_level = lmem_sub_level -1;
+					// Based on next level, determine the recurse blocks and size
+					double* lmem_rec_A = 0;
+					double* lmem_rec_B = 0;
+					double* lmem_rec_C = 0;
+					int lmem_rec_size = 0;
+					switch(lmem_rec_level)
+					{
+					case 0:
+						break;
+					case 1:
+						lmem_rec_A = l1mem_A;
+						lmem_rec_B = l1mem_B;
+						lmem_rec_C = l1mem_C;
+						lmem_rec_size = L1_BLOCK_SIZE;
+						break;
+					case 2:
+						lmem_rec_A = l2mem_A;
+						lmem_rec_B = l2mem_B;
+						lmem_rec_C = l2mem_C;
+						lmem_rec_size = L2_BLOCK_SIZE;
+						break;
+					}
+					// Call recursion
+					square_dgemm_recursive_cache_level(lmem_sub_A,
+													   lmem_sub_B,
+													   lmem_sub_C,
+													   lmem_sub_size,
+													   lmem_sub_level,
+													   cur_num_rows,
+													   cur_num_cols,
+													   cur_num_accs,
+													   lmem_rec_A,
+													   lmem_rec_B,
+													   lmem_rec_C,
+													   lmem_rec_size,
+													   lmem_rec_level);
+
+					// Copy from lmem_sub to lmem
+					copy_lmem_from_sublmem(lmem_A, lmem_B, lmem_C, lmem_size,
+										   cur_row, cur_num_rows, cur_col, cur_num_cols, cur_acc, cur_num_accs,
+										   lmem_sub_A, lmem_sub_B, lmem_sub_C, lmem_sub_size);
+				}
+			}
+		}
+	}
+	else
+	{
+		// Now on the L1 sized blocks, time to run the kernel
+		for(int iter_kernel_row = 0; iter_kernel_row < lmem_num_fill_row; iter_kernel_row += KERNEL_M)
+		{
+			for(int iter_kernel_col = 0; iter_kernel_col < lmem_num_fill_col; iter_kernel_col += KERNEL_N)
+			{
+				// Copy current kernel section from L1 to kernel memory
+				copy_to_kernel_mem(iter_kernel_row, iter_kernel_col);
+
+				// Execute kernel
+				kdgemm(kernel_A, kernel_B, kernel_C);
+
+				// Copy back from kernel memory
+				copy_from_kernel_mem(iter_kernel_row, iter_kernel_col);
+			}
+		}
+	}
+
+}
+
+/*******************************************************************************
+ * Definition of the squared matrix multiply. Performs recusrively blocked
+ * matrix multiply using multiple copy operations. It performs the transpose and
+ * the zero padding the kernel requires once at the highest level.
+ */
 void square_dgemm(const int M, const double *A, const double *B, double *C)
 {
-	// This function works by performing recursively blocked matrix multiply.
-	// The highest level works so that the block size causes the 3 blocks of the
-	// matrix operation to work entirely in L3 cache. The second level works so
-	// that its block size causes all 3 blocks to fall in L2 cache. The final
-	// level uses the kernel which operates on PxP matrices in a 2xP blocked
-	// fashion. The first step is to calculate the various block sizes and then
-	// they will be executed. The various block sizes were calculated so that
-	// boundaries are aligned in memory, which means once copied into aligned
-	// memory the alignment won't be an issue
 
-	// Get the number of blocks l3 blocks in M
+	// Calculate the number of sub blocks
 	const int num_l3_blocks = CALC_NUM_BLOCKS(M, L3_BLOCK_SIZE);
 
-	// Perform blocked multiplication with L3_BLOCK_SIZE sized blocks
-	for(int iter_l3_row_block = 0; iter_l3_row_block < num_l3_blocks; ++iter_l3_row_block)
+	// Perform blocked operations
+	for(int iter_row_block = 0; iter_row_block < num_l3_blocks; ++iter_row_block)
 	{
-		const int cur_main_row_pos = iter_l3_row_block * L3_BLOCK_SIZE;
-		const int cur_main_row_width = CALC_CUR_BLOCK_WIDTH(cur_main_row_pos, L3_BLOCK_SIZE, M);
-		const int num_l2_blocks_row = CALC_NUM_BLOCKS(cur_main_row_width, L2_BLOCK_SIZE);
+		const int cur_row = iter_row_block * L3_BLOCK_SIZE;
+		const int cur_num_rows = CALC_CUR_BLOCK_WIDTH(cur_row, L3_BLOCK_SIZE, M);
 
-		for(int iter_main_col_block = 0; iter_main_col_block < num_l3_blocks; ++iter_main_col_block)
+		for(int iter_col_block = 0; iter_col_block < num_l3_blocks; ++iter_col_block)
 		{
-			const int cur_main_col_pos = iter_main_col_block * L3_BLOCK_SIZE;
-			const int cur_main_col_width = CALC_CUR_BLOCK_WIDTH(cur_main_col_pos, L3_BLOCK_SIZE, M);
-			const int num_l2_blocks_col = CALC_NUM_BLOCKS(cur_main_col_width, L2_BLOCK_SIZE);
+			const int cur_col = iter_col_block * L3_BLOCK_SIZE;
+			const int cur_num_cols = CALC_CUR_BLOCK_WIDTH(cur_col, L3_BLOCK_SIZE, M);
 
-			for(int iter_main_accum_block = 0; iter_main_accum_block < num_l3_blocks; ++iter_main_accum_block)
+			for(int iter_acc_block = 0; iter_acc_block < num_l3_blocks; ++iter_acc_block)
 			{
-				const int cur_main_accum_pos = iter_main_accum_block * L3_BLOCK_SIZE;
-				const int cur_main_accum_width = CALC_CUR_BLOCK_WIDTH(cur_main_accum_pos, L3_BLOCK_SIZE, M);
-				const int num_l2_blocks_accum = CALC_NUM_BLOCKS(cur_main_accum_width, L2_BLOCK_SIZE);
+				const int cur_acc = iter_acc_block * L3_BLOCK_SIZE;
+				const int cur_num_accs = CALC_CUR_BLOCK_WIDTH(cur_acc, L3_BLOCK_SIZE, M);
 
-				// Perform blocked multiplication with L2_BLOCK_SIZE sized blocks
-				for(int iter_l3_row_block = 0; iter_l3_row_block < num_l2_blocks_row; ++iter_l3_row_block)
-				{
-					const int cur_l3_row_pos = iter_l3_row_block * L2_BLOCK_SIZE;
-					const int cur_l3_row_width = CALC_CUR_BLOCK_WIDTH(cur_l3_row_pos, L2_BLOCK_SIZE, cur_main_row_width);
-					const int num_l1_blocks_row = CALC_NUM_BLOCKS(cur_l3_row_width, L1_KERNEL_P);
+				// Copy data to L3 memory to begin recrusive process
+				copy_main_to_l3(A, B, C, M, cur_row, cur_num_rows, cur_col, cur_num_cols, cur_acc, cur_num_accs);
 
-					for(int iter_l3_col_block = 0; iter_l3_col_block < num_l2_blocks_col; ++iter_l3_col_block)
-					{
-						const int cur_l3_col_pos = iter_l3_col_block * L2_BLOCK_SIZE;
-						const int cur_l3_col_width = CALC_CUR_BLOCK_WIDTH(cur_l3_col_pos, L2_BLOCK_SIZE, cur_main_col_width);
-						const int num_l1_blocks_col = CALC_NUM_BLOCKS(cur_l3_col_width, L1_KERNEL_P);
+				// Begin recursive blocked matrix multiply on L3 size block
+				square_dgemm_recursive_cache_level(l3mem_A, l3mem_B, l3mem_C, L3_BLOCK_SIZE, 3,
+												   cur_num_rows, cur_num_cols, cur_num_accs,
+												   l2mem_A, l2mem_B, l2mem_C, L2_BLOCK_SIZE, 2);
 
-						for(int iter_l3_accum_block = 0; iter_l3_accum_block < num_l2_blocks_accum; ++iter_l3_accum_block)
-						{
-							const int cur_l3_accum_pos = iter_l3_accum_block * L2_BLOCK_SIZE;
-							const int cur_l3_accum_width = CALC_CUR_BLOCK_WIDTH(cur_l3_accum_pos, L2_BLOCK_SIZE, cur_main_accum_width);
-							const int num_l1_blocks_accum = CALC_NUM_BLOCKS(cur_l3_accum_width, L1_KERNEL_P);
-
-							// Perform blocked multiplication with L1_KERNEL_P sized blocks
-							for(int iter_l2_row_block = 0; iter_l2_row_block < num_l1_blocks_row; ++iter_l2_row_block)
-							{
-								const int cur_l2_row_pos = iter_l2_row_block * L1_KERNEL_P;
-								const int cur_l2_row_width = CALC_CUR_BLOCK_WIDTH(cur_l2_row_pos, L1_KERNEL_P, cur_l3_row_width);
-								const int num_kernel_blocks_row = CALC_NUM_BLOCKS(cur_l2_row_width, 2);
-
-								for(int iter_l2_col_block = 0; iter_l2_col_block < num_l1_blocks_col; ++iter_l2_col_block)
-								{
-									const int cur_l2_col_pos = iter_l2_col_block * L1_KERNEL_P;
-									const int cur_l2_col_width = CALC_CUR_BLOCK_WIDTH(cur_l2_col_pos, L1_KERNEL_P, cur_l3_col_width);
-									const int num_kernel_blocks_col = CALC_NUM_BLOCKS(cur_l2_col_width, 2);
-
-									for(int iter_l2_accum_block = 0; iter_l2_accum_block < num_l1_blocks_accum; ++iter_l2_accum_block)
-									{
-										const int cur_l2_accum_pos = iter_l2_accum_block * L1_KERNEL_P;
-										const int cur_l2_accum_width = CALC_CUR_BLOCK_WIDTH(cur_l2_accum_pos, L1_KERNEL_P, cur_l3_accum_width);
-
-										// Now have sizes of L1_KERNEL_P^2 or less. Use kernel which calculates blocks
-										// of size [2x2] = [L1_KERNEL_Px2] [2xL1_KERNEL_P]
-
-										// Perform kernel operations for each [2x2] block within the L1_KERNEL_P sized block
-										for(int iter_kernel_row_block = 0; iter_kernel_row_block < num_kernel_blocks_row; ++iter_kernel_row_block)
-										{
-											const int cur_kernel_row_pos = 2 * iter_kernel_row_block;
-											const int cur_kernel_row_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_row_pos, 2, cur_l2_row_width);
-
-											// Copy data to L3
-											to_kdgemm_A_sized(M, A + M * (cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_l2_accum_width);
-
-											for(int iter_kernel_col_block = 0; iter_kernel_col_block < num_kernel_blocks_col; ++iter_kernel_col_block)
-											{
-												const int cur_kernel_col_pos = 2 * iter_kernel_col_block;
-												const int cur_kernel_col_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_col_pos, 2, cur_l2_col_width);
-
-												// Now have complete offset into l3 memory buffer from which to copy data
-												// into the kernel memory buffers
-
-												// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
-												// Because of L3 memory size and the zero-ing operation, this will fit in the
-												// kernel space and have 0s where invalid
-												to_kdgemm_B_sized(M, B + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_l2_accum_width, cur_kernel_col_width);
-												to_kdgemm_C_sized(M, C + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C, cur_kernel_row_width, cur_kernel_col_width);
-
-												// Perform kernel operations
-												kdgemm(kernel_A, kernel_B, kernel_C);
-
-												// Copy results out of kernel memory buffers
-												from_kdgemm_C_sized(M, kernel_C, C + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, cur_kernel_row_width, cur_kernel_col_width);
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+				// Copy data back to main memory from L3
+				copy_main_from_l3(A, B, C, M, cur_row, cur_num_rows, cur_col, cur_num_cols, cur_acc, cur_num_accs);
 			}
 		}
 	}

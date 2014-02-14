@@ -6,9 +6,17 @@
  * order to make sure these are treated as compile-time constants
  * (which the optimizer likes)
  */
+#ifndef KERNEL_M
 #define KERNEL_M 2
+#endif
+
+#ifndef KERNEL_N
 #define KERNEL_N 2
+#endif
+
+#ifndef KERNEL_P
 #define KERNEL_P 16
+#endif
 
 /*
  * Block matrix multiply kernel (simple fixed-size case).
