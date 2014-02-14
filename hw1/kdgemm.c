@@ -40,9 +40,9 @@ void kdgemm(const double * restrict A,
             double * restrict C)
 {
     // This is really implicit in using the aligned ops...
-    __assume_aligned(A, 16);
-    __assume_aligned(B, 16);
-    __assume_aligned(C, 16);
+    __builtin_assume_aligned(A, 16);
+    __builtin_assume_aligned(B, 16);
+    __builtin_assume_aligned(C, 16);
 
     double temp = C[1];
 	C[1] = C[3];
