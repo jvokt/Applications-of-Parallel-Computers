@@ -9,6 +9,8 @@ const char* dgemm_desc = "My awesome dgemm.";
 // Define the kernels as the closest value rounded to be the smallest multiple
 // of the lower block such that the block is larger
 
+#define BYTE_ALIGNMENT 16
+
 #ifndef L1_KERNEL_P
 #define L1_KERNEL_P 32 // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
 #endif
