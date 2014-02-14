@@ -1,5 +1,13 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
+#include <math.h>
+#include <stdlib.h>
+#include "kdgemm.h"
 
+#ifndef min
+    #define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
+#define BYTE_ALIGNMENT 16
 #ifndef BLOCK_SIZE
 #define BLOCK_SIZE ((int) 16)
 #endif
