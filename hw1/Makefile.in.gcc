@@ -3,7 +3,7 @@ CC=gcc
 FC=gfortran
 
 # Compiler optimization flags.  You will definitely want to play with these!
-OPTFLAGS = -O3 -msse4
+OPTFLAGS = -O3 -msse4 -ftree-vectorize -ffast-math
 CFLAGS = -std=gnu99 
 FFLAGS =
 LDFLAGS = -fopenmp

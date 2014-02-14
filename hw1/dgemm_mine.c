@@ -65,7 +65,7 @@ const char* dgemm_desc = "My awesome dgemm.";
 // of the lower block such that the block is larger
 
 #ifndef L1_KERNEL_P
-#define L1_KERNEL_P 32 // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
+#define L1_KERNEL_P KERNEL_P // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
 #endif
 
 #ifndef L2_BLOCK_SIZE
