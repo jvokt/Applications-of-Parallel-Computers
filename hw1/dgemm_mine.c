@@ -65,7 +65,7 @@ const char* dgemm_desc = "My awesome dgemm.";
 // of the lower block such that the block is larger
 
 #ifndef L1_KERNEL_P
-#define L1_KERNEL_P KERNEL_P // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
+#define L1_KERNEL_P 32 // (KERNEL_SIZE_ALIGNED(L1_CACHE_SIZE, L1_CACHE_UTILIZATION))
 #endif
 
 #ifndef L2_BLOCK_SIZE
@@ -104,9 +104,11 @@ const char* dgemm_desc = "My awesome dgemm.";
  */
 
 // Memory for the 3 buffers for kernel operations using the L1 cache
-double* kernel_A = 0;
-double* kernel_B = 0;
-double* kernel_C = 0;
+double kernel_A[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double kernel_B[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double kernel_C[2 * 2] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+
+
 
 void square_dgemm(const int M, const double *A, const double *B, double *C)
 {
@@ -119,13 +121,6 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 	// they will be executed. The various block sizes were calculated so that
 	// boundaries are aligned in memory, which means once copied into aligned
 	// memory the alignment won't be an issue
-
-	if(kernel_A == 0)
-	{
-		kernel_A = _mm_malloc(2 * L1_KERNEL_P * sizeof(double), 16);
-		kernel_B = _mm_malloc(2 * L1_KERNEL_P * sizeof(double), 16);
-		kernel_C = _mm_malloc(2 * 2 * sizeof(double), 16);
-	}
 
 	// Get the number of blocks l3 blocks in M
 	const int num_l3_blocks = CALC_NUM_BLOCKS(M, L3_BLOCK_SIZE);
@@ -195,6 +190,8 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 											const int cur_kernel_col_pos = 2 * iter_kernel_col_block;
 											const int cur_kernel_col_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_col_pos, 2, cur_l2_col_width);
 
+											to_kdgemm_B_sized(M, B + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_l2_accum_width, cur_kernel_col_width);
+
 											for(int iter_kernel_row_block = 0; iter_kernel_row_block < num_kernel_blocks_row; ++iter_kernel_row_block)
 											{
 												const int cur_kernel_row_pos = 2 * iter_kernel_row_block;
@@ -207,7 +204,6 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// Because of L3 memory size and the zero-ing operation, this will fit in the
 												// kernel space and have 0s where invalid
 												to_kdgemm_A_sized(M, A + M * (cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_l2_accum_width);
-												to_kdgemm_B_sized(M, B + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_l2_accum_width, cur_kernel_col_width);
 												to_kdgemm_C_sized(M, C + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C, cur_kernel_row_width, cur_kernel_col_width);
 
 												// Perform kernel operations
