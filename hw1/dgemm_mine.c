@@ -69,11 +69,11 @@ const char* dgemm_desc = "My awesome dgemm.";
 #endif
 
 #ifndef L2_BLOCK_SIZE
-#define L2_BLOCK_SIZE 96 // (KERNEL_SIZE_ALIGNED(L2_CACHE_SIZE, L2_CACHE_UTILIZATION))
+#define L2_BLOCK_SIZE 64 // (KERNEL_SIZE_ALIGNED(L2_CACHE_SIZE, L2_CACHE_UTILIZATION))
 #endif
 
 #ifndef L3_BLOCK_SIZE
-#define L3_BLOCK_SIZE 384 // (KERNEL_SIZE_ALIGNED(L3_CACHE_SIZE, L3_CACHE_UTILIZATION))
+#define L3_BLOCK_SIZE 128 // (KERNEL_SIZE_ALIGNED(L3_CACHE_SIZE, L3_CACHE_UTILIZATION))
 #endif
 
 #if L1_KERNEL_P != KERNEL_P
@@ -104,9 +104,9 @@ const char* dgemm_desc = "My awesome dgemm.";
  */
 
 // Memory for the 3 buffers for kernel operations using the L1 cache
-double kernel_A[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double kernel_B[2 * L1_KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double kernel_C[2 * 2] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double* kernel_A = 0;
+double* kernel_B = 0;
+double* kernel_C = 0;
 
 
 
@@ -121,6 +121,13 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 	// they will be executed. The various block sizes were calculated so that
 	// boundaries are aligned in memory, which means once copied into aligned
 	// memory the alignment won't be an issue
+
+	if(kernel_A == 0)
+	{
+		kernel_A = _mm_malloc(2 * L1_KERNEL_P, 16);
+		kernel_B = _mm_malloc(2 * L1_KERNEL_P, 16);
+		kernel_C = _mm_malloc(2 * 2, 16);
+	}
 
 	// Get the number of blocks l3 blocks in M
 	const int num_l3_blocks = CALC_NUM_BLOCKS(M, L3_BLOCK_SIZE);
