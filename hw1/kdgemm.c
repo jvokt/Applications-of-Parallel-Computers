@@ -74,6 +74,7 @@ void kdgemm(const double * restrict A,
      * matrix multiply into the accumulated 2-by-2 product matrix, which is
      * stored in the registers cd (diagonal part) and co (off-diagonal part).
      */
+#pragma unroll(4)
     for (int k = 0; k < P; k += 2) {
 
       __m128d a0 = _mm_load_pd(A+2*k+0);
