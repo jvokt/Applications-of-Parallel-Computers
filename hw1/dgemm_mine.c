@@ -126,17 +126,17 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 	const int num_l3_blocks = CALC_NUM_BLOCKS(M, L3_BLOCK_SIZE);
 
 	// Perform blocked multiplication with L3_BLOCK_SIZE sized blocks
-	for(int iter_main_col_block = 0; iter_main_col_block < num_l3_blocks; ++iter_main_col_block)
+	for(int iter_l3_row_block = 0; iter_l3_row_block < num_l3_blocks; ++iter_l3_row_block)
 	{
-		const int cur_main_col_pos = iter_main_col_block * L3_BLOCK_SIZE;
-		const int cur_main_col_width = CALC_CUR_BLOCK_WIDTH(cur_main_col_pos, L3_BLOCK_SIZE, M);
-		const int num_l2_blocks_col = CALC_NUM_BLOCKS(cur_main_col_width, L2_BLOCK_SIZE);
+		const int cur_main_row_pos = iter_l3_row_block * L3_BLOCK_SIZE;
+		const int cur_main_row_width = CALC_CUR_BLOCK_WIDTH(cur_main_row_pos, L3_BLOCK_SIZE, M);
+		const int num_l2_blocks_row = CALC_NUM_BLOCKS(cur_main_row_width, L2_BLOCK_SIZE);
 
-		for(int iter_l3_row_block = 0; iter_l3_row_block < num_l3_blocks; ++iter_l3_row_block)
+		for(int iter_main_col_block = 0; iter_main_col_block < num_l3_blocks; ++iter_main_col_block)
 		{
-			const int cur_main_row_pos = iter_l3_row_block * L3_BLOCK_SIZE;
-			const int cur_main_row_width = CALC_CUR_BLOCK_WIDTH(cur_main_row_pos, L3_BLOCK_SIZE, M);
-			const int num_l2_blocks_row = CALC_NUM_BLOCKS(cur_main_row_width, L2_BLOCK_SIZE);
+			const int cur_main_col_pos = iter_main_col_block * L3_BLOCK_SIZE;
+			const int cur_main_col_width = CALC_CUR_BLOCK_WIDTH(cur_main_col_pos, L3_BLOCK_SIZE, M);
+			const int num_l2_blocks_col = CALC_NUM_BLOCKS(cur_main_col_width, L2_BLOCK_SIZE);
 
 			for(int iter_main_accum_block = 0; iter_main_accum_block < num_l3_blocks; ++iter_main_accum_block)
 			{
@@ -145,17 +145,17 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 				const int num_l2_blocks_accum = CALC_NUM_BLOCKS(cur_main_accum_width, L2_BLOCK_SIZE);
 
 				// Perform blocked multiplication with L2_BLOCK_SIZE sized blocks
-				for(int iter_l3_col_block = 0; iter_l3_col_block < num_l2_blocks_col; ++iter_l3_col_block)
+				for(int iter_l3_row_block = 0; iter_l3_row_block < num_l2_blocks_row; ++iter_l3_row_block)
 				{
-					const int cur_l3_col_pos = iter_l3_col_block * L2_BLOCK_SIZE;
-					const int cur_l3_col_width = CALC_CUR_BLOCK_WIDTH(cur_l3_col_pos, L2_BLOCK_SIZE, cur_main_col_width);
-					const int num_l1_blocks_col = CALC_NUM_BLOCKS(cur_l3_col_width, L1_KERNEL_P);
+					const int cur_l3_row_pos = iter_l3_row_block * L2_BLOCK_SIZE;
+					const int cur_l3_row_width = CALC_CUR_BLOCK_WIDTH(cur_l3_row_pos, L2_BLOCK_SIZE, cur_main_row_width);
+					const int num_l1_blocks_row = CALC_NUM_BLOCKS(cur_l3_row_width, L1_KERNEL_P);
 
-					for(int iter_l3_row_block = 0; iter_l3_row_block < num_l2_blocks_row; ++iter_l3_row_block)
+					for(int iter_l3_col_block = 0; iter_l3_col_block < num_l2_blocks_col; ++iter_l3_col_block)
 					{
-						const int cur_l3_row_pos = iter_l3_row_block * L2_BLOCK_SIZE;
-						const int cur_l3_row_width = CALC_CUR_BLOCK_WIDTH(cur_l3_row_pos, L2_BLOCK_SIZE, cur_main_row_width);
-						const int num_l1_blocks_row = CALC_NUM_BLOCKS(cur_l3_row_width, L1_KERNEL_P);
+						const int cur_l3_col_pos = iter_l3_col_block * L2_BLOCK_SIZE;
+						const int cur_l3_col_width = CALC_CUR_BLOCK_WIDTH(cur_l3_col_pos, L2_BLOCK_SIZE, cur_main_col_width);
+						const int num_l1_blocks_col = CALC_NUM_BLOCKS(cur_l3_col_width, L1_KERNEL_P);
 
 						for(int iter_l3_accum_block = 0; iter_l3_accum_block < num_l2_blocks_accum; ++iter_l3_accum_block)
 						{
@@ -164,17 +164,17 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 							const int num_l1_blocks_accum = CALC_NUM_BLOCKS(cur_l3_accum_width, L1_KERNEL_P);
 
 							// Perform blocked multiplication with L1_KERNEL_P sized blocks
-							for(int iter_l2_col_block = 0; iter_l2_col_block < num_l1_blocks_col; ++iter_l2_col_block)
+							for(int iter_l2_row_block = 0; iter_l2_row_block < num_l1_blocks_row; ++iter_l2_row_block)
 							{
-								const int cur_l2_col_pos = iter_l2_col_block * L1_KERNEL_P;
-								const int cur_l2_col_width = CALC_CUR_BLOCK_WIDTH(cur_l2_col_pos, L1_KERNEL_P, cur_l3_col_width);
-								const int num_kernel_blocks_col = CALC_NUM_BLOCKS(cur_l2_col_width, 2);
+								const int cur_l2_row_pos = iter_l2_row_block * L1_KERNEL_P;
+								const int cur_l2_row_width = CALC_CUR_BLOCK_WIDTH(cur_l2_row_pos, L1_KERNEL_P, cur_l3_row_width);
+								const int num_kernel_blocks_row = CALC_NUM_BLOCKS(cur_l2_row_width, 2);
 
-								for(int iter_l2_row_block = 0; iter_l2_row_block < num_l1_blocks_row; ++iter_l2_row_block)
+								for(int iter_l2_col_block = 0; iter_l2_col_block < num_l1_blocks_col; ++iter_l2_col_block)
 								{
-									const int cur_l2_row_pos = iter_l2_row_block * L1_KERNEL_P;
-									const int cur_l2_row_width = CALC_CUR_BLOCK_WIDTH(cur_l2_row_pos, L1_KERNEL_P, cur_l3_row_width);
-									const int num_kernel_blocks_row = CALC_NUM_BLOCKS(cur_l2_row_width, 2);
+									const int cur_l2_col_pos = iter_l2_col_block * L1_KERNEL_P;
+									const int cur_l2_col_width = CALC_CUR_BLOCK_WIDTH(cur_l2_col_pos, L1_KERNEL_P, cur_l3_col_width);
+									const int num_kernel_blocks_col = CALC_NUM_BLOCKS(cur_l2_col_width, 2);
 
 									for(int iter_l2_accum_block = 0; iter_l2_accum_block < num_l1_blocks_accum; ++iter_l2_accum_block)
 									{
@@ -185,17 +185,18 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 										// of size [2x2] = [L1_KERNEL_Px2] [2xL1_KERNEL_P]
 
 										// Perform kernel operations for each [2x2] block within the L1_KERNEL_P sized block
-										for(int iter_kernel_col_block = 0; iter_kernel_col_block < num_kernel_blocks_col; ++iter_kernel_col_block)
+										for(int iter_kernel_row_block = 0; iter_kernel_row_block < num_kernel_blocks_row; ++iter_kernel_row_block)
 										{
-											const int cur_kernel_col_pos = 2 * iter_kernel_col_block;
-											const int cur_kernel_col_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_col_pos, 2, cur_l2_col_width);
+											const int cur_kernel_row_pos = 2 * iter_kernel_row_block;
+											const int cur_kernel_row_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_row_pos, 2, cur_l2_row_width);
 
-											to_kdgemm_B_sized(M, B + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_l2_accum_width, cur_kernel_col_width);
+											// Copy data to L3
+											to_kdgemm_A_sized(M, A + M * (cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_l2_accum_width);
 
-											for(int iter_kernel_row_block = 0; iter_kernel_row_block < num_kernel_blocks_row; ++iter_kernel_row_block)
+											for(int iter_kernel_col_block = 0; iter_kernel_col_block < num_kernel_blocks_col; ++iter_kernel_col_block)
 											{
-												const int cur_kernel_row_pos = 2 * iter_kernel_row_block;
-												const int cur_kernel_row_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_row_pos, 2, cur_l2_row_width);
+												const int cur_kernel_col_pos = 2 * iter_kernel_col_block;
+												const int cur_kernel_col_width = CALC_CUR_BLOCK_WIDTH(cur_kernel_col_pos, 2, cur_l2_col_width);
 
 												// Now have complete offset into l3 memory buffer from which to copy data
 												// into the kernel memory buffers
@@ -203,7 +204,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												// Copy data into kernel memory buffers (copy optimization 2 & memory layout)
 												// Because of L3 memory size and the zero-ing operation, this will fit in the
 												// kernel space and have 0s where invalid
-												to_kdgemm_A_sized(M, A + M * (cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_A, cur_kernel_row_width, cur_l2_accum_width);
+												to_kdgemm_B_sized(M, B + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_accum_pos + cur_l3_accum_pos + cur_l2_accum_pos, kernel_B, cur_l2_accum_width, cur_kernel_col_width);
 												to_kdgemm_C_sized(M, C + M * (cur_main_col_pos + cur_l3_col_pos + cur_l2_col_pos + cur_kernel_col_pos) + cur_main_row_pos + cur_l3_row_pos + cur_l2_row_pos + cur_kernel_row_pos, kernel_C, cur_kernel_row_width, cur_kernel_col_width);
 
 												// Perform kernel operations
