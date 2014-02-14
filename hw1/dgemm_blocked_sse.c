@@ -37,7 +37,7 @@ void basic_dgemm(const int lda, const int M, const int N, const int K,
 			kdgemm(kernel_A, kernel_B, kernel_C);
 
 				// Copy results out of kernel memory buffers
-			from_kdgemm_C_sized(M, kernel_C, C + lda * j + i, min(2, M-i), min(2, N-j));
+			from_kdgemm_C_sized(lda, kernel_C, C + lda * j + i, min(2, M-i), min(2, N-j));
         }
     }
 }
