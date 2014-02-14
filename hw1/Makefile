@@ -9,7 +9,7 @@ PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
 .PHONY:	all
-all:	matmul-mine matmul-basic matmul-blocked matmul-blas matmul-f2c
+all:	matmul-mine matmul-basic matmul-blocked matmul-blas matmul-f2c matmul-blocked_sse
 
 # ---
 # Rules to build the drivers
