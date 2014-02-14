@@ -62,7 +62,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 		for(int iter_row_block = 0; iter_row_block < num_blocks; ++iter_row_block)
 		{
 			const int cur_row = iter_row_block * L1_KERNEL_P;
-			const int cur_row_num = CALC_CUR_BLOCK_WIDTH(iter_row_block, L1_KERNEL_P, M);
+			const int cur_row_num = CALC_CUR_BLOCK_WIDTH(cur_row, L1_KERNEL_P, M);
 			const int num_blocks_kernel_row = CALC_NUM_BLOCKS(cur_row_num, 2);
 
 			for(int iter_accum_block = 0; iter_accum_block < num_blocks; ++iter_accum_block)
