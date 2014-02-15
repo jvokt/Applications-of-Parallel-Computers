@@ -4,9 +4,9 @@ FC=ifort
 
 # Compiler optimization flags.  You will definitely want to play with these!
 OPTFLAGS = -O3 -msse4 -ffast-math
-CFLAGS = -std=gnu99 -pg
+CFLAGS = -std=gnu99
 FFLAGS = 
-LDFLAGS = -fopenmp -nofor-main -pg
+LDFLAGS = -fopenmp -nofor-main
 
 # Add -DDEBUG_RUN to CPPFLAGS to cut down on the cases.
 CPPFLAGS = "-DCOMPILER=\"$(CC)\"" "-DFLAGS=\"$(OPTFLAGS)\""
