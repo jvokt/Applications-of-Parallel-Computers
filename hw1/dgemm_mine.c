@@ -357,16 +357,18 @@ void square_dgemm_recursive_cache_level(double* restrict lmem_A,
 		// Now on the L1 sized blocks, time to run the kernel
 		for(int iter_kernel_row = 0; iter_kernel_row < lmem_num_fill_row; iter_kernel_row += KERNEL_M)
 		{
+			const int num_kernel_rows = CALC_CUR_BLOCK_WIDTH(iter_kernel_row, KERNEL_M, lmem_num_fill_row);
+			to_kdgemm_A_sized(L1_BLOCK_SIZE, l1mem_A + iter_kernel_row, kernel_A, num_kernel_rows, lmem_num_fill_acc);
+
 //#pragma unroll(4)
 			for(int iter_kernel_col = 0; iter_kernel_col < lmem_num_fill_col; iter_kernel_col += KERNEL_N)
 			{
 				// Calculate the number of row,cols to process. The kernel will
 				// be filled with 0s to handle missing places
-				const int num_kernel_rows = CALC_CUR_BLOCK_WIDTH(iter_kernel_row, KERNEL_M, lmem_num_fill_row);
+
 				const int num_kernel_cols = CALC_CUR_BLOCK_WIDTH(iter_kernel_col, KERNEL_N, lmem_num_fill_col);
 
 				// Copy current kernel section from L1 to kernel memory
-				to_kdgemm_A_sized(L1_BLOCK_SIZE, l1mem_A + iter_kernel_row, kernel_A, num_kernel_rows, lmem_num_fill_acc);
 				to_kdgemm_B_sized(L1_BLOCK_SIZE, l1mem_B + iter_kernel_col * L1_BLOCK_SIZE, kernel_B, lmem_num_fill_acc, num_kernel_cols);
 				to_kdgemm_C_sized(L1_BLOCK_SIZE, l1mem_C + iter_kernel_col * L1_BLOCK_SIZE + iter_kernel_row, kernel_C, num_kernel_rows, num_kernel_cols);
 
