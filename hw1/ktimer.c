@@ -160,7 +160,7 @@ int main(int argc, char** argv)
     double max_diff = check_kdgemm(A, B, C);
     diff_kdgemm(A, B, C);
     // Print kernel dimensions, megaflop rate, and error from check
-    printf("%u,%u,%u,%lg,%0.0e\n", DIM_M, DIM_P, DIM_N, 
+    printf("PERF: %u\t%u\t%u\t%lg\t%0.0e\n", DIM_M, DIM_P, DIM_N, 
            time_dgemm(Ak, Bk, Ck),
            max_diff);
 
