@@ -34,7 +34,7 @@ const char* dgemm_desc = "My awesome dgemm.";
 #endif
 
 #ifndef L3_BLOCK_MULT
-#define L3_BLOCK_MULT 2
+#define L3_BLOCK_MULT 4
 #endif
 
 #ifndef L3_BLOCK_SIZE
