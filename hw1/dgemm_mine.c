@@ -89,7 +89,7 @@ double kernel_C[KERNEL_M * KERNEL_N] __attribute__ ((aligned (BYTE_ALIGNMENT)));
  * @param mem_acc The accumulator to copy from
  * @param mem_num_accs The number of accs to run
  */
-void copy_main_to_l3(double* A, double* B, double* C, const int M,
+void copy_main_to_l3(const double* A, const double* B, const double* C, const int M,
 					 const int mem_row, const int mem_num_rows,
 					 const int mem_col, const int mem_num_cols,
 					 const int mem_acc, const int mem_num_accs)
@@ -160,9 +160,9 @@ void copy_main_from_l3(double* C, const int M,
  * @param lmem_sub_C The sub memory buffer to copy to
  * @param lmem_sub_size The size of the sub memory buffer
  */
-void copy_lmem_to_sublmem(restrict double* lmem_A,
-					   	  restrict double* lmem_B,
-					   	  restrict double* lmem_C,
+void copy_lmem_to_sublmem(const restrict double* lmem_A,
+						  const restrict double* lmem_B,
+						  const restrict double* lmem_C,
 					   	  const int lmem_size,
 					   	  const int lmem_row,
 					   	  const int lmem_num_rows,
