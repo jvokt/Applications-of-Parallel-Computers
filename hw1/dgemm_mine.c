@@ -116,7 +116,7 @@ void copy_main_to_l3(const double* A, const double* B, const double* C, const in
 	{
 		memcpy(l3mem_B + iter_col * L3_BLOCK_SIZE,
 				B + (iter_col + mem_col) * M,
-				mem_num_accs);
+				mem_num_accs * sizeof(double));
 	}
 }
 
@@ -197,7 +197,7 @@ void copy_lmem_to_sublmem(const double* restrict lmem_A,
 	{
 		memcpy(lmem_sub_B + iter_col * lmem_sub_size,
 				lmem_B + (iter_col + lmem_col) * lmem_size,
-				lmem_num_accs);
+				lmem_num_accs * sizeof(double));
 	}
 }
 
