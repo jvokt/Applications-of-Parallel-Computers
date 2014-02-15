@@ -72,7 +72,6 @@ void kdgemm(const double * restrict A,
      * stored in the registers cd (diagonal part) and co (off-diagonal part).
      */
 #pragma unroll(8)
-#pragma prefetch A, B
     for (int k = 0; k < P; k += 2) {
 
       __m128d a0 = _mm_load_pd(A+2*k+0);
