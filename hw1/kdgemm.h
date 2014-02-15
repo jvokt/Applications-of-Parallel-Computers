@@ -15,7 +15,7 @@
 #endif
 
 #ifndef KERNEL_P
-#define KERNEL_P 32
+#define KERNEL_P 16
 #endif
 
 /*
