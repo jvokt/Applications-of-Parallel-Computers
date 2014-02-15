@@ -99,7 +99,7 @@ void copy_main_to_l3(const double* A, const double* B, const double* C, const in
 	for(int iter_col = 0; iter_col < mem_num_cols; ++iter_col)
 	{
 		memcpy(l3mem_C + iter_col * L3_BLOCK_SIZE,
-				C + (iter_col + mem_col) * M,
+				C + (iter_col + mem_col) * M + mem_row,
 				mem_num_rows * sizeof(double));
 	}
 	// Copy all of A
@@ -107,7 +107,7 @@ void copy_main_to_l3(const double* A, const double* B, const double* C, const in
 	for(int iter_col = 0; iter_col < mem_num_accs; ++iter_col)
 	{
 		memcpy(l3mem_A + iter_col * L3_BLOCK_SIZE,
-				A + (iter_col + mem_acc) * M,
+				A + (iter_col + mem_acc) * M + mem_row,
 				mem_num_rows * sizeof(double));
 	}
 	// Copy all of B
@@ -137,7 +137,7 @@ void copy_main_from_l3(double* C, const int M,
 //#pragma unroll(4)
 	for(int iter_col = 0; iter_col < mem_num_cols; ++iter_col)
 	{
-		memcpy(C + (iter_col + mem_col) * M,
+		memcpy(C + (iter_col + mem_col) * M + mem_row,
 				l3mem_C + iter_col * L3_BLOCK_SIZE,
 				mem_num_rows * sizeof(double));
 	}
@@ -180,7 +180,7 @@ void copy_lmem_to_sublmem(const double* restrict lmem_A,
 	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
 	{
 		memcpy(lmem_sub_C + iter_col * lmem_sub_size,
-				lmem_C + (iter_col + lmem_col) * lmem_size,
+				lmem_C + (iter_col + lmem_col) * lmem_size + lmem_row,
 				lmem_num_rows * sizeof(double));
 	}
 	// Copy all of A
@@ -188,7 +188,7 @@ void copy_lmem_to_sublmem(const double* restrict lmem_A,
 	for(int iter_col = 0; iter_col < lmem_num_accs; ++iter_col)
 	{
 		memcpy(lmem_sub_A + iter_col * lmem_sub_size,
-				lmem_A + (iter_col + lmem_acc) * lmem_size,
+				lmem_A + (iter_col + lmem_acc) * lmem_size + lmem_row,
 				lmem_num_rows * sizeof(double));
 	}
 	// Copy all of B
@@ -225,7 +225,7 @@ void copy_lmem_from_sublmem(double* restrict lmem_C,
 //#pragma unroll(4)
 	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
 	{
-		memcpy(lmem_C + (iter_col + lmem_col) * lmem_size,
+		memcpy(lmem_C + (iter_col + lmem_col) * lmem_size + lmem_row,
 				lmem_sub_C + iter_col * lmem_sub_size,
 				lmem_num_rows * sizeof(double));
 	}
