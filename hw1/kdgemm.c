@@ -178,7 +178,7 @@ void from_kdgemm_C(int ldC, const double* restrict Ck, double * restrict C)
 
 void from_kdgemm_C_sized(int ldC, const double* restrict Ck, double * restrict C, int row_width, int col_width)
 {
-	Ck[0] = C[0];
+	C[0] = Ck[0];
 	if(row_width == 2)
 	{
 		C[1] = Ck[3];
