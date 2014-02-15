@@ -95,7 +95,7 @@ void copy_main_to_l3(const double* A, const double* B, const double* C, const in
 					 const int mem_acc, const int mem_num_accs)
 {
 	// Copy all of C
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < mem_num_cols; ++iter_col)
 	{
 		memcpy(l3mem_C + iter_col * L3_BLOCK_SIZE,
@@ -103,7 +103,7 @@ void copy_main_to_l3(const double* A, const double* B, const double* C, const in
 				mem_num_rows * sizeof(double));
 	}
 	// Copy all of A
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < mem_num_accs; ++iter_col)
 	{
 		memcpy(l3mem_A + iter_col * L3_BLOCK_SIZE,
@@ -111,7 +111,7 @@ void copy_main_to_l3(const double* A, const double* B, const double* C, const in
 				mem_num_rows * sizeof(double));
 	}
 	// Copy all of B
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < mem_num_cols; ++iter_col)
 	{
 		memcpy(l3mem_B + iter_col * L3_BLOCK_SIZE,
@@ -134,7 +134,7 @@ void copy_main_from_l3(double* C, const int M,
 					 const int mem_col, const int mem_num_cols)
 {
 	// Copy all of C
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < mem_num_cols; ++iter_col)
 	{
 		memcpy(C + (iter_col + mem_col) * M,
@@ -176,7 +176,7 @@ void copy_lmem_to_sublmem(const double* restrict lmem_A,
 					   	  const int lmem_sub_size)
 {
 	// Copy all of C
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
 	{
 		memcpy(lmem_sub_C + iter_col * lmem_sub_size,
@@ -184,7 +184,7 @@ void copy_lmem_to_sublmem(const double* restrict lmem_A,
 				lmem_num_rows * sizeof(double));
 	}
 	// Copy all of A
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < lmem_num_accs; ++iter_col)
 	{
 		memcpy(lmem_sub_A + iter_col * lmem_sub_size,
@@ -192,7 +192,7 @@ void copy_lmem_to_sublmem(const double* restrict lmem_A,
 				lmem_num_rows * sizeof(double));
 	}
 	// Copy all of B
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
 	{
 		memcpy(lmem_sub_B + iter_col * lmem_sub_size,
@@ -222,7 +222,7 @@ void copy_lmem_from_sublmem(double* restrict lmem_C,
 						    const int lmem_sub_size)
 {
 	// Copy all of C
-#pragma unroll(4)
+//#pragma unroll(4)
 	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
 	{
 		memcpy(lmem_C + (iter_col + lmem_col) * lmem_size,
@@ -291,7 +291,7 @@ void square_dgemm_recursive_cache_level(double* restrict lmem_A,
 				const int cur_col = iter_col_block * lmem_sub_size;
 				const int cur_num_cols = CALC_CUR_BLOCK_WIDTH(cur_col, lmem_sub_size, lmem_num_fill_col);
 
-#pragma unroll(4)
+//#pragma unroll(4)
 				for(int iter_acc_block = 0; iter_acc_block < num_sub_acc_blocks; ++iter_acc_block)
 				{
 					const int cur_acc = iter_acc_block * lmem_sub_size;
@@ -316,8 +316,6 @@ void square_dgemm_recursive_cache_level(double* restrict lmem_A,
 					int lmem_rec_size = 0;
 					switch(lmem_rec_level)
 					{
-					case 0:
-						break;
 					case 1:
 						lmem_rec_A = l1mem_A;
 						lmem_rec_B = l1mem_B;
@@ -359,7 +357,7 @@ void square_dgemm_recursive_cache_level(double* restrict lmem_A,
 		// Now on the L1 sized blocks, time to run the kernel
 		for(int iter_kernel_row = 0; iter_kernel_row < lmem_num_fill_row; iter_kernel_row += KERNEL_M)
 		{
-#pragma unroll(4)
+//#pragma unroll(4)
 			for(int iter_kernel_col = 0; iter_kernel_col < lmem_num_fill_col; iter_kernel_col += KERNEL_N)
 			{
 				// Calculate the number of row,cols to process. The kernel will
@@ -405,6 +403,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 			const int cur_col = iter_col_block * L3_BLOCK_SIZE;
 			const int cur_num_cols = CALC_CUR_BLOCK_WIDTH(cur_col, L3_BLOCK_SIZE, M);
 
+//#pragma unroll(4)
 			for(int iter_acc_block = 0; iter_acc_block < num_l3_blocks; ++iter_acc_block)
 			{
 				const int cur_acc = iter_acc_block * L3_BLOCK_SIZE;
