@@ -40,13 +40,9 @@ void kdgemm(const double * restrict A,
             double * restrict C)
 {
     // This is really implicit in using the aligned ops...
-    __builtin_assume_aligned(A, 16);
-    __builtin_assume_aligned(B, 16);
-    __builtin_assume_aligned(C, 16);
-
-    double temp = C[1];
-	C[1] = C[3];
-	C[3] = temp;
+    __assume_aligned(A, 16);
+    __assume_aligned(B, 16);
+    __assume_aligned(C, 16);
 
     // Load diagonal and off-diagonals
     __m128d cd = _mm_load_pd(C+0);
@@ -74,7 +70,7 @@ void kdgemm(const double * restrict A,
      * matrix multiply into the accumulated 2-by-2 product matrix, which is
      * stored in the registers cd (diagonal part) and co (off-diagonal part).
      */
-#pragma unroll(4)
+#pragma unroll(8)
     for (int k = 0; k < P; k += 2) {
 
       __m128d a0 = _mm_load_pd(A+2*k+0);
@@ -99,11 +95,6 @@ void kdgemm(const double * restrict A,
     // Write back sum
     _mm_store_pd(C+0, cd);
     _mm_store_pd(C+2, co);
-
-    temp = C[1];
-    C[1] = C[3];
-    C[3] = temp;
-
 }
 
 /*
@@ -164,19 +155,19 @@ void to_kdgemm_C(int ldC, const double* restrict C, double * restrict Ck)
 
 void to_kdgemm_C_sized(int ldC, const double* restrict C, double * restrict Ck, int row_width, int col_width)
 {
-	for (int j = 0; j < N; ++j)
+
+	Ck[0] = C[0];
+	if(row_width == 2)
 	{
-	   for (int i = 0; i < M; ++i)
-	   {
-		   if(i < row_width && j < col_width)
-		   {
-			   Ck[i+j*M] = C[i+j*ldC];
-		   }
-		   else
-		   {
-			   Ck[i+j*M] = 0;
-		   }
-	   }
+		Ck[3] = C[1];
+	}
+	if(col_width == 2)
+	{
+		Ck[2] = C[ldC];
+	}
+	if(row_width == 2 && col_width == 2)
+	{
+		Ck[1] = C[1 + ldC];
 	}
 }
 
@@ -187,11 +178,17 @@ void from_kdgemm_C(int ldC, const double* restrict Ck, double * restrict C)
 
 void from_kdgemm_C_sized(int ldC, const double* restrict Ck, double * restrict C, int row_width, int col_width)
 {
-	for (int j = 0; j < col_width; ++j)
+	Ck[0] = C[0];
+	if(row_width == 2)
 	{
-	   for (int i = 0; i < row_width; ++i)
-	   {
-		   C[i+j*ldC] = Ck[i+j*M];
-	   }
+		C[1] = Ck[3];
+	}
+	if(col_width == 2)
+	{
+		C[ldC] = Ck[2];
+	}
+	if(row_width == 2 && col_width == 2)
+	{
+		C[1 + ldC] = Ck[1];
 	}
 }
