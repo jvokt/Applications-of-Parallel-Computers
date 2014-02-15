@@ -77,9 +77,7 @@ double kernel_B[KERNEL_N * KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 double kernel_C[KERNEL_M * KERNEL_N] __attribute__ ((aligned (BYTE_ALIGNMENT)));
 
 /*******************************************************************************
- * Copies data from main memory to the first L3 segment, transposes A so that it
- * is used more efficiently, and pads the boundaries with zeros if not a
- * multiple of M or N
+ * Copies data from main memory to the first L3 segment
  * @param A The memory segment to copy from
  * @param B The memory segment to copy from
  * @param C The memory segment to copy from
@@ -112,14 +110,13 @@ void copy_main_to_l3(double* A, double* B, double* C, const int M,
 				A + (iter_col + mem_acc) * M,
 				mem_num_rows * sizeof(double));
 	}
-	// Copy all of B, transpose as part of copy
+	// Copy all of B
+#pragma unroll(4)
 	for(int iter_col = 0; iter_col < mem_num_cols; ++iter_col)
 	{
-#pragma unroll(4)
-		for(int iter_row = 0; iter_row < mem_num_accs; ++iter_row)
-		{
-			l3mem_B[iter_col+iter_row*L3_BLOCK_SIZE] = B[iter_row+iter_col*M];
-		}
+		memcpy(l3mem_B + iter_col * L3_BLOCK_SIZE,
+				B + (iter_col + mem_col) * M,
+				mem_num_accs);
 	}
 }
 
@@ -172,7 +169,7 @@ void copy_lmem_to_sublmem(restrict double* lmem_A,
 					   	  const int lmem_col,
 					   	  const int lmem_num_cols,
 					   	  const int lmem_acc,
-					   	  const int lmem_num_acc,
+					   	  const int lmem_num_accs,
 					   	  restrict double* lmem_sub_A,
 					   	  restrict double* lmem_sub_B,
 					   	  restrict double* lmem_sub_C,
@@ -183,19 +180,24 @@ void copy_lmem_to_sublmem(restrict double* lmem_A,
 	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
 	{
 		memcpy(lmem_sub_C + iter_col * lmem_sub_size,
-				lmem_C + lmem_col * lmem_size + lmem_row,
+				lmem_C + (iter_col + lmem_col) * lmem_size,
 				lmem_num_rows * sizeof(double));
 	}
-	// Copy all of A and B
+	// Copy all of A
 #pragma unroll(4)
-	for(int iter_col = 0; iter_col < lmem_num_acc; ++iter_col)
+	for(int iter_col = 0; iter_col < lmem_num_accs; ++iter_col)
 	{
 		memcpy(lmem_sub_A + iter_col * lmem_sub_size,
 				lmem_A + (iter_col + lmem_acc) * lmem_size,
 				lmem_num_rows * sizeof(double));
+	}
+	// Copy all of B
+#pragma unroll(4)
+	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
+	{
 		memcpy(lmem_sub_B + iter_col * lmem_sub_size,
-				lmem_B + (iter_col + lmem_acc) * lmem_size,
-				lmem_num_cols * sizeof(double));
+				lmem_B + (iter_col + lmem_col) * lmem_size,
+				lmem_num_accs);
 	}
 }
 
@@ -223,36 +225,10 @@ void copy_lmem_from_sublmem(restrict double* lmem_C,
 #pragma unroll(4)
 	for(int iter_col = 0; iter_col < lmem_num_cols; ++iter_col)
 	{
-		memcpy(lmem_C + lmem_col * lmem_size + lmem_row,
+		memcpy(lmem_C + (iter_col + lmem_col) * lmem_size,
 				lmem_sub_C + iter_col * lmem_sub_size,
 				lmem_num_rows * sizeof(double));
 	}
-}
-
-/*******************************************************************************
- * Copies data from the L1 memory segment at the given row,col to the kernel
- * memory for use in executing the kernel
- * @param kernel_row The row to copy from
- * @param kernel_col The col to copy from
- * @param num_kernel_rows The number of kernel rows to process
- * @param num_kernel_cols The numer of kernel cols to process
- */
-void copy_to_kernel_mem(const int kernel_row, const int kernel_col, const int num_kernel_rows, const int num_kernel_cols)
-{
-	// TODO
-}
-
-/*******************************************************************************
- * Copies data from the kernel memory to L1 memory at the given row,col to the kernel
- * memory for use in executing the kernel
- * @param kernel_row The row to copy to
- * @param kernel_col The col to copy to
- * @param num_kernel_rows The number of kernel rows to process
- * @param num_kernel_cols The numer of kernel cols to process
- */
-void copy_from_kernel_mem(const int kernel_row, const int kernel_col, const int num_kernel_rows, const int num_kernel_cols)
-{
-	// TODO
 }
 
 /*******************************************************************************
@@ -392,13 +368,15 @@ void square_dgemm_recursive_cache_level(restrict double* lmem_A,
 				const int num_kernel_cols = CALC_CUR_BLOCK_WIDTH(iter_kernel_col, KERNEL_N, lmem_num_fill_col);
 
 				// Copy current kernel section from L1 to kernel memory
-				copy_to_kernel_mem(iter_kernel_row, iter_kernel_col, num_kernel_rows, num_kernel_cols);
+				to_kdgemm_A_sized(L1_BLOCK_SIZE, l1mem_A + iter_kernel_row, kernel_A, num_kernel_rows, lmem_num_fill_acc);
+				to_kdgemm_B_sized(L1_BLOCK_SIZE, l1mem_B + iter_kernel_col * L1_BLOCK_SIZE, kernel_B, lmem_num_fill_acc, num_kernel_cols);
+				to_kdgemm_C_sized(L1_BLOCK_SIZE, l1mem_C + iter_kernel_col * L1_BLOCK_SIZE + iter_kernel_row, kernel_C, num_kernel_rows, num_kernel_cols);
 
 				// Execute kernel
 				kdgemm(kernel_A, kernel_B, kernel_C);
 
 				// Copy back from kernel memory
-				copy_from_kernel_mem(iter_kernel_row, iter_kernel_col, num_kernel_rows, num_kernel_cols);
+				from_kdgemm_C_sized(L1_BLOCK_SIZE, kernel_C, l1mem_C + iter_kernel_col * L1_BLOCK_SIZE + iter_kernel_row, kernel_C, num_kernel_rows, num_kernel_cols);
 			}
 		}
 	}
