@@ -6,10 +6,11 @@
 # For example, the default setup has a Makefile.in.icc and Makefile.in.gcc.
 
 PLATFORM=icc
+P=2
 include Makefile_kernel.in.$(PLATFORM)
-
+override CFLAGS += -D KERNEL_P=$(P)
 .PHONY:	all
-all:	ktimer
+all:	ktimer_$(P)
 
 .PHONY: run
 run:
@@ -20,7 +21,7 @@ run:
 # ---
 # Rules to build the drivers
 
-ktimer: ktimer.o kdgemm.o
+ktimer_%: ktimer.o kdgemm.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 # --
