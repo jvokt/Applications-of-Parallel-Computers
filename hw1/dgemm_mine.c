@@ -160,9 +160,9 @@ void copy_main_from_l3(double* C, const int M,
  * @param lmem_sub_C The sub memory buffer to copy to
  * @param lmem_sub_size The size of the sub memory buffer
  */
-void copy_lmem_to_sublmem(const restrict double* lmem_A,
-						  const restrict double* lmem_B,
-						  const restrict double* lmem_C,
+void copy_lmem_to_sublmem(const double* restrict lmem_A,
+						  const double* restrict lmem_B,
+						  const double* restrict lmem_C,
 					   	  const int lmem_size,
 					   	  const int lmem_row,
 					   	  const int lmem_num_rows,
@@ -170,9 +170,9 @@ void copy_lmem_to_sublmem(const restrict double* lmem_A,
 					   	  const int lmem_num_cols,
 					   	  const int lmem_acc,
 					   	  const int lmem_num_accs,
-					   	  restrict double* lmem_sub_A,
-					   	  restrict double* lmem_sub_B,
-					   	  restrict double* lmem_sub_C,
+					   	  double* restrict lmem_sub_A,
+					   	  double* restrict lmem_sub_B,
+					   	  double* restrict lmem_sub_C,
 					   	  const int lmem_sub_size)
 {
 	// Copy all of C
@@ -212,13 +212,13 @@ void copy_lmem_to_sublmem(const restrict double* lmem_A,
  * @param lmem_sub_C The sub memory buffer to copy to
  * @param lmem_sub_size The size of the sub memory buffer
  */
-void copy_lmem_from_sublmem(restrict double* lmem_C,
+void copy_lmem_from_sublmem(double* restrict lmem_C,
 						    const int lmem_size,
 						    const int lmem_row,
 						    const int lmem_num_rows,
 						    const int lmem_col,
 						    const int lmem_num_cols,
-						    restrict double* lmem_sub_C,
+						    double* restrict lmem_sub_C,
 						    const int lmem_sub_size)
 {
 	// Copy all of C
@@ -247,17 +247,17 @@ void copy_lmem_from_sublmem(restrict double* lmem_C,
  * @param lmem_sub_size The size of the lmem_sub blocks is lmem_sub_size^2
  * @param lmem_sub_level The cache level of lmem_sub
  */
-void square_dgemm_recursive_cache_level(restrict double* lmem_A,
-										restrict double* lmem_B,
-										restrict double* lmem_C,
+void square_dgemm_recursive_cache_level(double* restrict lmem_A,
+										double* restrict lmem_B,
+										double* restrict lmem_C,
 										const int lmem_size,
 										const int lmem_level,
 										const int lmem_num_fill_row,
 										const int lmem_num_fill_col,
 										const int lmem_num_fill_acc,
-										restrict double* lmem_sub_A,
-										restrict double* lmem_sub_B,
-										restrict double* lmem_sub_C,
+										double* restrict lmem_sub_A,
+										double* restrict lmem_sub_B,
+										double* restrict lmem_sub_C,
 										const int lmem_sub_size,
 										const int lmem_sub_level)
 {
