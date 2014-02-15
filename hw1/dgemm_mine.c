@@ -376,7 +376,7 @@ void square_dgemm_recursive_cache_level(double* restrict lmem_A,
 				kdgemm(kernel_A, kernel_B, kernel_C);
 
 				// Copy back from kernel memory
-				from_kdgemm_C_sized(L1_BLOCK_SIZE, kernel_C, l1mem_C + iter_kernel_col * L1_BLOCK_SIZE + iter_kernel_row, kernel_C, num_kernel_rows, num_kernel_cols);
+				from_kdgemm_C_sized(L1_BLOCK_SIZE, kernel_C, l1mem_C + iter_kernel_col * L1_BLOCK_SIZE + iter_kernel_row, num_kernel_rows, num_kernel_cols);
 			}
 		}
 	}
@@ -419,7 +419,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C)
 												   l2mem_A, l2mem_B, l2mem_C, L2_BLOCK_SIZE, 2);
 
 				// Copy data back to main memory from L3
-				copy_main_from_l3(A, B, C, M, cur_row, cur_num_rows, cur_col, cur_num_cols, cur_acc, cur_num_accs);
+				copy_main_from_l3(C, M, cur_row, cur_num_rows, cur_col, cur_num_cols);
 			}
 		}
 	}
