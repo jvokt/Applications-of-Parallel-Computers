@@ -4,7 +4,8 @@ import os
 import sys
 
 # Whether this is distributed or not
-isDistributed = True
+#isDistributed = True
+isDistributed = False
 
 # Define the parameter values
 allVals = [8, 16, 32, 64, 128]
@@ -28,6 +29,5 @@ for curA in aVals:
                     os.system(baseCommand)
                 print '\Launched Tuner ' + str(curTuner) + ' ' + str(totalTuners)
                 curTuner += 1
-                sys.exit()
                 
 print 'Completed'

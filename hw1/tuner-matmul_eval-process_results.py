@@ -8,14 +8,14 @@ import glob
 outFilename = 'tuner-matmul_eval-collection.csv'
 
 # Get all files that need to be collected
-incrementalOutFiles = glob.glob('tuner-matmul_eval-single-?_?_?_?.csv')
+incrementalOutFiles = glob.glob('tuner-matmul_eval-single-*_*_*_*.csv')
 
 # Load all of data across incremental files
 print 'Loading Data Files'
 data = []
 curFileNum = 1
 for curFilename in incrementalOutFiles:
-    print '\tData File ' + str(curFileNum) + ' of ' + len(incrementalOutFiles)
+    print '\tData File ' + str(curFileNum) + ' of ' + str(len(incrementalOutFiles))
     curFileNum += 1
     # Read the entire file
     curFile = open(curFilename, 'r')
@@ -33,7 +33,7 @@ for curFilename in incrementalOutFiles:
         data.append((curA, curC, curK, curP, curM, curMflops))
     
 # Sort the data by megaflops descending
-data.sort(key=lambda lineTuple: lineTuple[4], reverse=True)
+data.sort(key=lambda lineTuple: lineTuple[5], reverse=True)
 
 # Write out the data into one file sorted
 # Start the initial collection file
