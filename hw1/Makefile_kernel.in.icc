@@ -3,7 +3,7 @@ CC=icc
 FC=ifort 
 
 # Compiler optimization flags.  You will definitely want to play with these!
-OPTFLAGS = -O2
+OPTFLAGS = -O3 -msse4 -march=native
 CFLAGS = -std=gnu99 -g
 LDFLAGS = -fopenmp 
 
