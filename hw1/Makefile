@@ -5,8 +5,16 @@
 # to play with, you can put them in an appropriately-named Makefile.in.
 # For example, the default setup has a Makefile.in.icc and Makefile.in.gcc.
 
+# Default values for macros inside 'mine' implementation
+A_BLOCK_LEN=16
+C_BLOCK_LEN=16
+K_BLOCK_LEN=16
+P_BLOCK_LEN=16
+
 PLATFORM=icc
 include Makefile.in.$(PLATFORM)
+
+override CFLAGS += -D A_BLOCK_LEN=$(A_BLOCK_LEN)  -D C_BLOCK_LEN=$(C_BLOCK_LEN)  -D K_BLOCK_LEN=$(K_BLOCK_LEN)  -D P_BLOCK_LEN=$(P_BLOCK_LEN)
 
 .PHONY:	all
 all:	matmul-mine matmul-basic matmul-blocked matmul-blas matmul-f2c
@@ -18,6 +26,9 @@ matmul-%: $(OBJS) dgemm_%.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 	
 matmul-mine: $(OBJS) kdgemm.o dgemm_mine.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
+	
+matmul-mine-%: $(OBJS) kdgemm.o dgemm_mine.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 matmul-f2c: $(OBJS) dgemm_f2c.o dgemm_f2c_desc.o fdgemm.o

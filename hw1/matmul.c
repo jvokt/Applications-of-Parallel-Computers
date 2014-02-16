@@ -16,6 +16,20 @@
 #include <math.h>
 #include <omp.h>
 
+// Default parameters for printing
+#ifndef A_BLOCK_LEN
+#define A_BLOCK_LEN 16
+#endif
+#ifndef C_BLOCK_LEN
+#define C_BLOCK_LEN 16
+#endif
+#ifndef K_BLOCK_LEN
+#define K_BLOCK_LEN 16
+#endif
+#ifndef P_BLOCK_LEN
+#define P_BLOCK_LEN 16
+#endif
+
 #ifndef COMPILER
 #  define COMPILER "unknown"
 #endif
@@ -244,7 +258,9 @@ int main(int argc, char** argv)
     for (int i = 0; i < N_SIZES; ++i) {
         const int M = test_sizes[i];
         validate_dgemm(M, A, B, C);
-        fprintf(fp, "%u,%lg\n", M, time_dgemm(M, A, B, C));
+        double mflops = time_dgemm(M, A, B, C);
+        fprintf(fp, "%u,%lg\n", M, mflops);
+        printf("PERF\t%u\t%u\t%u\t%u\t%u\t%lg\n", A_BLOCK_LEN, C_BLOCK_LEN, K_BLOCK_LEN, P_BLOCK_LEN, M, mflops);
     }
 
     free(C);
