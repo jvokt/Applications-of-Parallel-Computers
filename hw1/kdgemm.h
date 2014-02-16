@@ -18,6 +18,14 @@
 #define KERNEL_P 32
 #endif
 
+#ifndef MEM_ALIGN
+#define MEM_ALIGN 64
+#endif
+
+static int DIM_M=KERNEL_M;
+static int DIM_N=KERNEL_N;
+static int DIM_P=KERNEL_P;
+
 /*
  * Block matrix multiply kernel (simple fixed-size case).
  * Use restrict to tell the compiler there is no aliasing,

@@ -3,22 +3,10 @@
 #include <string.h>
 #include <math.h>
 #include <omp.h>
+#include "kdgemm.h"
 
 #define MIN_RUNS 4
 #define MIN_SECS 0.25
-
-// External DGEMM kernel
-void kdgemm(const double* A, const double* B, double* C);
-
-// Routines to convert between column major and internal matrix formats
-void to_kdgemm_A(int ldA, const double* A, double* Ak);
-void to_kdgemm_B(int ldB, const double* B, double* Bk);
-void from_kdgemm_C(int ldC, const double* Ck, double* C);
-
-// Matrix sizes for external kernel
-extern int DIM_M;
-extern int DIM_N;
-extern int DIM_P;
 
 void matrix_init(double *A, int M, int N)
 {
@@ -125,9 +113,9 @@ int main(int argc, char** argv)
     double* C = malloc(DIM_M * DIM_N * sizeof(double));
 
     // Allocate aligned scratch space for use by the kernel
-    double* Ak = _mm_malloc(DIM_M * DIM_P * sizeof(double), 16);
-    double* Bk = _mm_malloc(DIM_P * DIM_N * sizeof(double), 16);
-    double* Ck = _mm_malloc(DIM_M * DIM_N * sizeof(double), 16);
+    double* Ak = _mm_malloc(DIM_M * DIM_P * sizeof(double), MEM_ALIGN);
+    double* Bk = _mm_malloc(DIM_P * DIM_N * sizeof(double), MEM_ALIGN);
+    double* Ck = _mm_malloc(DIM_M * DIM_N * sizeof(double), MEM_ALIGN);
 
     // Initialize the input matrices and convert to kernel format
     matrix_init(A, DIM_M, DIM_P);

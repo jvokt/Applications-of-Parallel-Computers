@@ -14,13 +14,6 @@ const char* dgemm_desc = "My awesome dgemm.";
  * Program constants
  */
 
-#ifndef BYTE_ALIGNMENT
-#define BYTE_ALIGNMENT 16
-#endif
-
-// Define the kernels as the closest value rounded to be the smallest multiple
-// of the lower block such that the block is larger
-
 #ifndef L1_BLOCK_SIZE
 #define L1_BLOCK_SIZE KERNEL_P
 #endif
@@ -57,24 +50,24 @@ const char* dgemm_desc = "My awesome dgemm.";
  */
 
 // Memory for the 3 buffers for L3 level blocking, converted for zero padding and transposed
-double l3mem_A[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double l3mem_B[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double l3mem_C[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l3mem_A[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
+double l3mem_B[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
+double l3mem_C[L3_BLOCK_SIZE * L3_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
 
 // Memory for the 3 buffers for L2 level blocking, already padded and transposed
-double l2mem_A[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double l2mem_B[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double l2mem_C[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l2mem_A[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
+double l2mem_B[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
+double l2mem_C[L2_BLOCK_SIZE * L2_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
 
 // Memory for the 3 buffers for L1 level blocking, already padded and transposed
-double l1mem_A[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double l1mem_B[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double l1mem_C[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double l1mem_A[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
+double l1mem_B[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
+double l1mem_C[L1_BLOCK_SIZE * L1_BLOCK_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
 
 // Memory for the 3 buffers for kernel operations, already padded and transposed
-double kernel_A[KERNEL_M * KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double kernel_B[KERNEL_N * KERNEL_P] __attribute__ ((aligned (BYTE_ALIGNMENT)));
-double kernel_C[KERNEL_M * KERNEL_N] __attribute__ ((aligned (BYTE_ALIGNMENT)));
+double kernel_A[KERNEL_M * KERNEL_P] __attribute__ ((aligned (MEM_ALIGN)));
+double kernel_B[KERNEL_N * KERNEL_P] __attribute__ ((aligned (MEM_ALIGN)));
+double kernel_C[KERNEL_M * KERNEL_N] __attribute__ ((aligned (MEM_ALIGN)));
 
 /*******************************************************************************
  * Copies data from main memory to the first L3 segment
@@ -254,12 +247,12 @@ void square_dgemm_recursive_cache_level(double* restrict lmem_A,
 										const int lmem_sub_level)
 {
 	// The lmem blocks are aligned in memory, use for caching improvements
-	__assume_aligned(lmem_A, BYTE_ALIGNMENT);
-	__assume_aligned(lmem_B, BYTE_ALIGNMENT);
-	__assume_aligned(lmem_C, BYTE_ALIGNMENT);
-	__assume_aligned(lmem_sub_A, BYTE_ALIGNMENT);
-	__assume_aligned(lmem_sub_B, BYTE_ALIGNMENT);
-	__assume_aligned(lmem_sub_C, BYTE_ALIGNMENT);
+	__assume_aligned(lmem_A, MEM_ALIGN);
+	__assume_aligned(lmem_B, MEM_ALIGN);
+	__assume_aligned(lmem_C, MEM_ALIGN);
+	__assume_aligned(lmem_sub_A, MEM_ALIGN);
+	__assume_aligned(lmem_sub_B, MEM_ALIGN);
+	__assume_aligned(lmem_sub_C, MEM_ALIGN);
 
 	// Check the level, if it is 1 then it is time to run the kernel, otherwise
 	// it requires recursion

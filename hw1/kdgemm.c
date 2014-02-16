@@ -27,9 +27,7 @@
  * the dimensions of a kernel multiply are.  It uses them both for
  * space allocation and for flop rate computations.
  */
-int DIM_M=KERNEL_M;
-int DIM_N=KERNEL_N;
-int DIM_P=KERNEL_P;
+
 
 /*
  * Block matrix multiply kernel (simple fixed-size case).
@@ -41,9 +39,9 @@ void kdgemm(const double * restrict A,
             double * restrict C)
 {
     // This is really implicit in using the aligned ops...
-    __assume_aligned(A, 16);
-    __assume_aligned(B, 16);
-    __assume_aligned(C, 16);
+    __assume_aligned(A, MEM_ALIGN);
+    __assume_aligned(B, MEM_ALIGN);
+    __assume_aligned(C, MEM_ALIGN);
 
     // Load diagonal and off-diagonals
     __m128d cd = _mm_load_pd(C+0);
