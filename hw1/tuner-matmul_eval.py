@@ -21,12 +21,12 @@ for curA in aVals:
     for curC in cVals:
         for curK in kVals:
             for curP in pVals:
-                baseCommand = 'python tuner-matmul_eval-single.py ' + str(curA) + ' ' + str(curC) + ' ' + str(curP) + ' ' + str(curK)
+                print '\tLaunching Tuner ' + str(curTuner) + ' ' + str(totalTuners)
+                baseCommand = 'python tuner-matmul_eval-single.py ' + str(curA) + ' ' + str(curC) + ' ' + str(curK) + ' ' + str(curP) 
                 if isDistributed:
                     os.system('csub ' + baseCommand)
                 else:
                     os.system(baseCommand)
-                print '\Launched Tuner ' + str(curTuner) + ' ' + str(totalTuners)
                 curTuner += 1
                 sys.exit()
                 
