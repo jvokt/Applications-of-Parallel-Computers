@@ -71,10 +71,9 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 	// Pack A into memory
 	for(int iter_col = 0; iter_col < num_acc; ++iter_col)
 	{
-		for(int iter_row = 0; iter_row < num_rows_AC; ++iter_row)
-		{
-			A_pack[iter_row + iter_col * num_rows_AC] = A[iter_row + iter_col * M];
-		}
+		memcpy(A_pack + iter_col * num_rows_AC,
+				A + iter_col * M,
+				num_rows_AC * sizeof(double));
 	}
 
 	// For each slice in B,C
