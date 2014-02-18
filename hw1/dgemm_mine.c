@@ -124,6 +124,7 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 void gepp_blk_var1(const int M, const double* A, const int num_acc, const double* B, double *C)
 {
 	// Pack B into B_pack
+#pragma prefetch B, B_pack
 	for(int iter_col = 0; iter_col < M; ++iter_col)
 	{
 		memcpy(B_pack + iter_col * num_acc,
