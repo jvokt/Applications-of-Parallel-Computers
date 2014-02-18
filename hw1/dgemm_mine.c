@@ -213,13 +213,13 @@ void square_dgemm(const int M, const double *A, const double *B, double *C) {
 					to_kdgemm_A_sized(C_BLOCK_LEN, A_pack + K_block_pos,
 							A_kernel, C_block_width, panel_width);
 					//printf("panel=%d,cblock=%d,pblock=%d,kblock=%d,panelwidth=%d,cblockwidth=%d,pblockwidth=%d,kblockwidth=%d,cblockpos=%d\n",panel,C_block,P_block,K_block,panel_width,C_block_width,P_block_width,K_block_width,C_block_pos);
-					printf("Print A_kernel:\n");
+//					printf("Print A_kernel:\n");
 					pmat(A_kernel, 2, A_BLOCK_LEN);
-					printf("Print B_kernel:\n");
+//					printf("Print B_kernel:\n");
 					pmat(B_kernel, A_BLOCK_LEN, 2);
 					clear_kdgemm_C_sized(C_kernel);
 					kdgemm(A_kernel, B_kernel, C_kernel);
-					printf("Print C_kernel:\n");
+//					printf("Print C_kernel:\n");
 					pmat(C_kernel, 2, 2);
 					from_kdgemm_C_sized(K_BLOCK_LEN, C_kernel,
 							C_pack + K_block_pos, K_block_width, P_block_width);
@@ -237,7 +237,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C) {
 						int j = col + P_block_pos;
 						int result = C_pack[row + col * C_BLOCK_LEN];
 						C[i + M * j] += result;
-						printf("i=%d,j=%d,result=%d\n", i, j, result);
+//						printf("i=%d,j=%d,result=%d\n", i, j, result);
 					}
 			}
 		}
