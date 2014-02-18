@@ -59,7 +59,6 @@ extern void square_dgemm();
   Note the strange sizes...  You'll see some interesting effects
   around some of the powers-of-two.
 */
-/*
 const int test_sizes[] = {
      31, 32, 96, 97, 127, 128, 129, 191, 192, 229,
 #if defined(DEBUG_RUN)
@@ -70,8 +69,6 @@ const int test_sizes[] = {
 # define MAX_SIZE 769u
 #endif
 };
-*/
-const int test_sizes[] = {32};
 #define MAX_SIZE 769u
 #define N_SIZES (sizeof (test_sizes) / sizeof (int))
 

@@ -2,6 +2,7 @@
 #include <xmmintrin.h>
 #include "kdgemm.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define N 2
@@ -109,7 +110,6 @@ void to_kdgemm_A(int ldA, const double* restrict A, double * restrict Ak)
 
 void to_kdgemm_A_sized(int ldA, const double* restrict A, double * restrict Ak, int row_width, int col_width)
 {
-	printf('TO_A\t%d\t%d\n', row_width, col_width);
 	for (int j = 0; j < P; ++j)
 	{
 	   for (int i = 0; i < M; ++i)
@@ -133,7 +133,6 @@ void to_kdgemm_B(int ldB, const double* restrict B, double * restrict Bk)
 
 void to_kdgemm_B_sized(int ldB, const double* restrict B, double * restrict Bk, int row_width, int col_width)
 {
-	printf('TO_B\t%d\t%d\n', row_width, col_width);
 	for (int i = 0; i < P; ++i)
 	{
 	    for (int j = 0; j < N; ++j)
