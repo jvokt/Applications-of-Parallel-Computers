@@ -128,10 +128,9 @@ void gepp_blk_var1(const int M, const double* A, const int num_acc, const double
 	// Pack B into B_pack
 	for(int iter_col = 0; iter_col < M; ++iter_col)
 	{
-		for(int iter_row = 0; iter_row < num_acc; ++iter_row)
-		{
-			B_pack[iter_row + iter_col * num_acc] = B[iter_row + iter_col * M];
-		}
+		memcpy(B_pack + iter_col * num_acc,
+				B + iter_col * M,
+				num_acc * sizeof(double));
 	}
 
 	// For each block of A
