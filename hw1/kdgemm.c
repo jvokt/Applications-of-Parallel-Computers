@@ -110,7 +110,6 @@ void to_kdgemm_A(int ldA, const double* restrict A, double * restrict Ak)
 
 void to_kdgemm_A_sized(int ldA, const double* restrict A, double * restrict Ak, int row_width, int col_width)
 {
-#pragma prefetch Ak, A
 	for (int j = 0; j < P; ++j)
 	{
 	   for (int i = 0; i < M; ++i)
@@ -134,7 +133,6 @@ void to_kdgemm_B(int ldB, const double* restrict B, double * restrict Bk)
 
 void to_kdgemm_B_sized(int ldB, const double* restrict B, double * restrict Bk, int row_width, int col_width)
 {
-#pragma prefetch Bk, B
 	for (int i = 0; i < P; ++i)
 	{
 	    for (int j = 0; j < N; ++j)
