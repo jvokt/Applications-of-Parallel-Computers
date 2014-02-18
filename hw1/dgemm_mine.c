@@ -211,7 +211,7 @@ void square_dgemm(const int M, const double *A, const double *B, double *C) {
 							K_BLOCK_LEN,
 							C_block_width);
 					to_kdgemm_A_sized(C_BLOCK_LEN, A_pack + K_block_pos,
-							A_kernel, C_block_width, panel_width);
+							A_kernel, K_block_width, panel_width);
 					//printf("panel=%d,cblock=%d,pblock=%d,kblock=%d,panelwidth=%d,cblockwidth=%d,pblockwidth=%d,kblockwidth=%d,cblockpos=%d\n",panel,C_block,P_block,K_block,panel_width,C_block_width,P_block_width,K_block_width,C_block_pos);
 //					printf("Print A_kernel:\n");
 					pmat(A_kernel, 2, A_BLOCK_LEN);
