@@ -191,3 +191,8 @@ void from_kdgemm_C_sized(int ldC, const double* restrict Ck, double * restrict C
 		C[1 + ldC] = Ck[1];
 	}
 }
+
+void clear_kdgemm_C_sized(double* restrict Ck)
+{
+	memset(Ck, 0, M * N);
+}
