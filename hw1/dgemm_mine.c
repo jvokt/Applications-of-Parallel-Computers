@@ -34,6 +34,8 @@ const char* dgemm_desc = "My awesome dgemm.";
  */
 
 double A_pack[C_BLOCK_LEN * A_BLOCK_LEN] __attribute__ ((aligned (MEM_ALIGN)));
+#define B_PREALLOC_SIZE 800
+double B_pack_prealloc[B_PREALLOC_SIZE * B_PREALLOC_SIZE] __attribute__ ((aligned (MEM_ALIGN)));
 double* B_pack; // Allocated dynamically at runtime
 double C_aux[C_BLOCK_LEN * 2] __attribute__ ((aligned (MEM_ALIGN)));
 
@@ -146,7 +148,14 @@ void gepp_blk_var1(const int M, const double* A, const int num_acc, const double
 void square_dgemm(const int M, const double *A, const double *B, double *C) {
 
 	// Allocate the B packed memory
-	B_pack = _mm_malloc(A_BLOCK_LEN*M*sizeof(double), MEM_ALIGN);
+	if(M > B_PREALLOC_SIZE)
+	{
+		B_pack = _mm_malloc(A_BLOCK_LEN*M*sizeof(double), MEM_ALIGN);
+	}
+	else
+	{
+		B_pack = B_pack_prealloc;
+	}
 
 	// Calculate the number of accum blocks in the master loop
 	const int num_acc_blocks = CALC_NUM_BLOCKS(M, A_BLOCK_LEN);
@@ -166,5 +175,9 @@ void square_dgemm(const int M, const double *A, const double *B, double *C) {
 	}
 
 	// Free the dynamically sized blcok
-	_mm_free(B_pack);
+	if(M > B_PREALLOC_SIZE)
+	{
+		_mm_free(B_pack);
+		B_pack = 0;
+	}
 }
