@@ -31,7 +31,7 @@ for curFilename in incrementalOutFiles:
         data.append((curA, curC, curM, curMflops))
     
 # Sort the data by megaflops descending
-data.sort(key=lambda lineTuple: lineTuple[5], reverse=True)
+data.sort(key=lambda lineTuple: lineTuple[3], reverse=True)
 
 # Write out the data into one file sorted
 # Start the initial collection file

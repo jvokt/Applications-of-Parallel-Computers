@@ -25,5 +25,7 @@ for curA in aVals:
         else:
             os.system(baseCommand)
         curTuner += 1
+	if curTuner > 3:
+		break
                 
 print 'Completed'

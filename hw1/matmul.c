@@ -261,7 +261,7 @@ int main(int argc, char** argv)
         validate_dgemm(M, A, B, C);
         double mflops = time_dgemm(M, A, B, C);
         fprintf(fp, "%u,%lg\n", M, mflops);
-        printf("PERF\t%u\t%u\t%u\t%u\t%u\t%lg\n", A_BLOCK_LEN, C_BLOCK_LEN, K_BLOCK_LEN, P_BLOCK_LEN, M, mflops);
+        printf("PERF\t%u\t%u\t%u\t%lg\n", A_BLOCK_LEN, C_BLOCK_LEN, M, mflops);
     }
 
     free(C);
