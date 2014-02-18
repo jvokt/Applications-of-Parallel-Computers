@@ -108,7 +108,7 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 		{
 			for(int iter_row = 0; iter_row < num_rows_AC; ++iter_row)
 			{
-				C[iter_row + iter_slice_part * M] += C_aux[iter_row + iter_slice_part * C_BLOCK_LEN];
+				C[iter_row + (cur_slice_pos + iter_slice_part) * M] += C_aux[iter_row + iter_slice_part * C_BLOCK_LEN];
 			}
 		}
 	}
