@@ -143,7 +143,7 @@ void gepp_blk_var1(const int M, const double* A, const int num_acc, const double
 
 		// Perform block panel multiplication
 		const double* cur_A = A + cur_AC_pos;
-		const double* cur_C = C + cur_AC_pos;
+		double* cur_C = C + cur_AC_pos;
 		gebp_opt1(M, cur_A, num_rows_AC, num_acc, cur_C);
 	}
 }
