@@ -9,8 +9,8 @@ import numpy
 isDistributed = False
 
 # Define the parameter values
-aVals = [192, 240, 256, 304, 336];
-cVals = [8, 16, 32, 40, 48, 64];
+aVals = [192, 240, 256];
+cVals = [40, 48, 64];
 
 # Execute csub script to run make across parameter grid
 print 'Launching the Single Tuners'
