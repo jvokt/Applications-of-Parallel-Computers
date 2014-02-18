@@ -130,11 +130,11 @@ void gepp_blk_var1(const int M, const double* A, const int num_acc, const double
 	}
 
 	// For each block of A
-	int num_AC_blocks = CALC_NUM_BLOCKS(M, A_BLOCK_LEN);
+	int num_AC_blocks = CALC_NUM_BLOCKS(M, C_BLOCK_LEN);
 	for(int iter_AC_block = 0; iter_AC_block < num_AC_blocks; ++iter_AC_block)
 	{
-		const int cur_AC_pos = iter_AC_block * A_BLOCK_LEN;
-		const int num_rows_AC = CALC_CUR_BLOCK_WIDTH(cur_AC_pos, A_BLOCK_LEN, M);
+		const int cur_AC_pos = iter_AC_block * C_BLOCK_LEN;
+		const int num_rows_AC = CALC_CUR_BLOCK_WIDTH(cur_AC_pos, C_BLOCK_LEN, M);
 
 		// Perform block panel multiplication
 		const double* cur_A = A + cur_AC_pos;
