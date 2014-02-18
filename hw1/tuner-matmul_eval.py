@@ -14,7 +14,7 @@ cVals = [8, 16, 32, 40, 48, 64];
 
 # Execute csub script to run make across parameter grid
 print 'Launching the Single Tuners'
-totalTuners = len(allVals)
+totalTuners = len(aVals) * len(cVals)
 curTuner = 1
 for curA in aVals:
     for curC in cVals:
