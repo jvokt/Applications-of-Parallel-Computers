@@ -122,7 +122,6 @@ void to_kdgemm_A_sized(int ldA, const double* restrict A, double * restrict Ak, 
 	}
 	if(row_width < M)
 	{
-#pragma unroll(P)
 		for(int j = 0; j < P; ++j)
 		{
 			memset(Ak + row_width + j * M, 0, M-row_width);
@@ -137,31 +136,19 @@ void to_kdgemm_B(int ldB, const double* restrict B, double * restrict Bk)
 
 void to_kdgemm_B_sized(int ldB, const double* restrict B, double * restrict Bk, int row_width, int col_width)
 {
-	for(int i = 0; i < row_width; ++i)
+	for (int j = 0; j < N; ++j)
 	{
-		for(int j = 0; j < col_width; ++j)
+		for (int i = 0; i < P; ++i)
 		{
-			Bk[j+i*N] = B[i+j*ldB];
-		}
-	}
-
-	for(int i = row_width; i < P; ++i)
-	{
-#pragma unroll(N)
-		for(int j = 0; j < N; ++j)
-		{
-			Bk[j + i*N] = 0;
-		}
-	}
-
-	for(int j = col_width; j < N; ++j)
-	{
-#pragma unroll(P)
-		for(int i = 0; i < P; ++i)
-		{
-
-			Bk[j + i*N] = 0;
-		}
+	    	if(i < row_width && j < col_width)
+	    	{
+	    		Bk[j+i*N] = B[i+j*ldB];
+	    	}
+	    	else
+	    	{
+	    		Bk[j+i*N] = 0;
+	    	}
+	    }
 	}
 }
 
