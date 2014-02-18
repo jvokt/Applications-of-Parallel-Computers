@@ -93,7 +93,7 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 
 			// Copy into kernel memory
 			to_kdgemm_A_sized(C_BLOCK_LEN, A_pack + cur_a_aux_pos, A_kernel, num_a_aux, num_acc);
-			to_kdgemm_B_sized(A_BLOCK_LEN, B_pack + cur_slice_pos * num_acc, B_kernel, num_acc, num_slice);
+			to_kdgemm_B_sized(num_acc, B_pack + cur_slice_pos * num_acc, B_kernel, num_acc, num_slice);
 			clear_kdgemm_C_sized(C_kernel);
 
 			// Run kernel
