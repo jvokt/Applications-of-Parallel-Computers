@@ -8,7 +8,7 @@ import glob
 outFilename = 'tuner-matmul_eval-collection.csv'
 
 # Get all files that need to be collected
-incrementalOutFiles = glob.glob('tuner-matmul_eval-single-*_*_*_*.csv')
+incrementalOutFiles = glob.glob('tuner-matmul_eval-single-*_*.csv')
 
 # Load all of data across incremental files
 print 'Loading Data Files'
@@ -26,11 +26,9 @@ for curFilename in incrementalOutFiles:
         curLineParts = curLine.split('\t')
         curA = int(curLineParts[1])
         curC = int(curLineParts[2])
-        curK = int(curLineParts[3])
-        curP = int(curLineParts[4])
-        curM = int(curLineParts[5])
-        curMflops = float(curLineParts[6])
-        data.append((curA, curC, curK, curP, curM, curMflops))
+        curM = int(curLineParts[3])
+        curMflops = float(curLineParts[4])
+        data.append((curA, curC, curM, curMflops))
     
 # Sort the data by megaflops descending
 data.sort(key=lambda lineTuple: lineTuple[5], reverse=True)
@@ -38,10 +36,10 @@ data.sort(key=lambda lineTuple: lineTuple[5], reverse=True)
 # Write out the data into one file sorted
 # Start the initial collection file
 outFile = open(outFilename, 'w')
-outFile.write('PERF\tA_BLOCK_LEN\tC_BLOCK_LEN\tK_BLOCK_LEN\tP_BLOCK_LEN\tM\tMFLOPS\n')
+outFile.write('PERF\tA_BLOCK_LEN\tC_BLOCK_LEN\tM\tMFLOPS\n')
 # Write data
 for dataLine in data:
-    outFile.write('PERF\t' + str(dataLine[0]) + '\t' + str(dataLine[1]) + '\t' + str(dataLine[2]) + '\t' + str(dataLine[3]) + '\t' + str(dataLine[4]) + '\t' + str(dataLine[5]) + '\n')
+    outFile.write('PERF\t' + str(dataLine[0]) + '\t' + str(dataLine[1]) + '\t' + str(dataLine[2]) + '\t' + str(dataLine[3]) +'\n')
 # Close file
 outFile.close()
 

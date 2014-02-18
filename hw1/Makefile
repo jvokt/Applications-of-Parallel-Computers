@@ -8,13 +8,11 @@
 # Default values for macros inside 'mine' implementation
 A_BLOCK_LEN=16
 C_BLOCK_LEN=16
-K_BLOCK_LEN=2
-P_BLOCK_LEN=2
 
 PLATFORM=icc
 include Makefile.in.$(PLATFORM)
 
-override CFLAGS += -D A_BLOCK_LEN=$(A_BLOCK_LEN)  -D C_BLOCK_LEN=$(C_BLOCK_LEN)  -D K_BLOCK_LEN=$(K_BLOCK_LEN)  -D P_BLOCK_LEN=$(P_BLOCK_LEN)
+override CFLAGS += -D A_BLOCK_LEN=$(A_BLOCK_LEN)  -D C_BLOCK_LEN=$(C_BLOCK_LEN)
 
 .PHONY:	all
 all:	matmul-mine matmul-basic matmul-blocked matmul-blas matmul-f2c

@@ -9,6 +9,7 @@ const char* dgemm_desc = "My awesome dgemm.";
 /*******************************************************************************
  * Program constants
  */
+
 #ifndef A_BLOCK_LEN
 #define A_BLOCK_LEN 16
 #endif
@@ -17,13 +18,6 @@ const char* dgemm_desc = "My awesome dgemm.";
 #define C_BLOCK_LEN 16
 #endif
 
-#ifndef P_BLOCK_LEN
-#define P_BLOCK_LEN 2
-#endif
-
-#ifndef K_BLOCK_LEN
-#define K_BLOCK_LEN 2
-#endif
 
 /*******************************************************************************
  * Standard calculations
