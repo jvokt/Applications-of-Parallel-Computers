@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N K_BLOCK_LEN
-#define M P_BLOCK_LEN
+#define N 2
+#define M 2
 #define P A_BLOCK_LEN
 
 
@@ -196,5 +196,5 @@ void from_kdgemm_C_sized(int ldC, const double* restrict Ck, double * restrict C
 
 void clear_kdgemm_C_sized(double* restrict Ck)
 {
-	memset(Ck, 0, M * N);
+	memset(Ck, 0, M * N * sizeof(double));
 }
