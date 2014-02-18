@@ -73,7 +73,7 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 	{
 		for(int iter_row = 0; iter_row < num_rows_AC; ++iter_row)
 		{
-			A_pack[iter_row + iter_col * C_BLOCK_LEN] = A[iter_row + iter_col * M];
+			A_pack[iter_row + iter_col * num_rows_AC] = A[iter_row + iter_col * M];
 		}
 	}
 
@@ -92,7 +92,7 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 			const int num_a_aux = CALC_CUR_BLOCK_WIDTH(cur_a_aux_pos, 2, num_rows_AC);
 
 			// Copy into kernel memory
-			to_kdgemm_A_sized(C_BLOCK_LEN, A_pack + cur_a_aux_pos, A_kernel, num_a_aux, num_acc);
+			to_kdgemm_A_sized(num_rows_AC, A_pack + cur_a_aux_pos, A_kernel, num_a_aux, num_acc);
 			to_kdgemm_B_sized(num_acc, B_pack + cur_slice_pos * num_acc, B_kernel, num_acc, num_slice);
 			clear_kdgemm_C_sized(C_kernel);
 
