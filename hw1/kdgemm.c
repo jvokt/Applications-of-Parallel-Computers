@@ -110,26 +110,19 @@ void to_kdgemm_A(int ldA, const double* restrict A, double * restrict Ak)
 
 void to_kdgemm_A_sized(int ldA, const double* restrict A, double * restrict Ak, int row_width, int col_width)
 {
-	for(int j = 0; j < col_width; ++j)
+	for (int j = 0; j < P; ++j)
 	{
-		for(int i = 0; i < row_width; ++i)
-		{
-			Ak[i + j * M] = A[i + j * ldA];
-		}
-	}
-	for(int j = col_width; j < P; ++j)
-	{
-		for(int i = 0; i < row_width; ++i)
-		{
-			Ak[i + j * M] = 0;
-		}
-	}
-	if(row_width < M)
-	{
-		for(int j = 0; j < P; ++j)
-		{
-			Ak[1 + j * M] = 0;
-		}
+	   for (int i = 0; i < M; ++i)
+	   {
+		   if(i < row_width && j < col_width)
+		   {
+			   Ak[i+j*M] = A[i+j*ldA];
+		   }
+		   else
+		   {
+			   Ak[i+j*M] = 0;
+		   }
+	   }
 	}
 }
 
@@ -140,10 +133,10 @@ void to_kdgemm_B(int ldB, const double* restrict B, double * restrict Bk)
 
 void to_kdgemm_B_sized(int ldB, const double* restrict B, double * restrict Bk, int row_width, int col_width)
 {
-	for (int j = 0; j < N; ++j)
+	for (int i = 0; i < P; ++i)
 	{
-		for (int i = 0; i < P; ++i)
-		{
+	    for (int j = 0; j < N; ++j)
+	    {
 	    	if(i < row_width && j < col_width)
 	    	{
 	    		Bk[j+i*N] = B[i+j*ldB];
