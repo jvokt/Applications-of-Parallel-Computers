@@ -112,19 +112,23 @@ void to_kdgemm_A_sized(int ldA, const double* restrict A, double * restrict Ak, 
 {
 	for(int j = 0; j < col_width; ++j)
 	{
-		memcpy(Ak + j * M,
-				A + j * ldA,
-				row_width * sizeof(double));
+		for(int i = 0; i < row_width; ++i)
+		{
+			Ak[i + j * M] = A[i + j * ldA];
+		}
 	}
 	for(int j = col_width; j < P; ++j)
 	{
-		memset(Ak + j*M, 0, row_width * sizeof(double));
+		for(int i = 0; i < row_width; ++i)
+		{
+			Ak[i + j * M] = 0;
+		}
 	}
 	if(row_width < M)
 	{
 		for(int j = 0; j < P; ++j)
 		{
-			memset(Ak + row_width + j * M, 0, M-row_width);
+			Ak[1 + j * M] = 0;
 		}
 	}
 }
