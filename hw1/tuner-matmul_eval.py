@@ -9,7 +9,7 @@ import numpy
 isDistributed = False
 
 # Define the parameter values
-allVals = range(16,512+1,16)
+allVals = range(16,176+1,16)
 
 # Execute csub script to run make across parameter grid
 print 'Launching the Single Tuners'
