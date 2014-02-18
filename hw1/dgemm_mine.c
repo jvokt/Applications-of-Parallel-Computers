@@ -141,6 +141,16 @@ void square_dgemm3(const int M, const double *A, const double *B, double *C) {
  }
  */
 
+void pmat(double* restrict A, int M, int N) {
+	for (int i = 0; i < M; i++) {
+		for (int j = 0; j < N; j++)
+		{
+			//printf("%g, ", A[i + j * M]);
+		}
+		//printf("\n");
+	}
+}
+
 void square_dgemm(const int M, const double *A, const double *B, double *C) {
 	//double* B_pack = _mm_malloc(A_BLOCK_LEN*M*sizeof(double), MEM_ALIGN);
 
@@ -233,14 +243,6 @@ void square_dgemm(const int M, const double *A, const double *B, double *C) {
 		}
 	}
 	//_mm_free(B_pack);
-}
-
-void pmat(double* restrict A, int M, int N) {
-	for (int i = 0; i < M; i++) {
-		for (int j = 0; j < N; j++)
-			printf("%g, ", A[i + j * M]);
-		printf("\n");
-	}
 }
 
 void to_B_pack(double* dest, double* source, const int num_rows,

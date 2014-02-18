@@ -2,6 +2,7 @@
 #include <xmmintrin.h>
 #include "kdgemm.h"
 #include <stdio.h>
+#include <string.h>
 
 #define N K_BLOCK_LEN
 #define M P_BLOCK_LEN
