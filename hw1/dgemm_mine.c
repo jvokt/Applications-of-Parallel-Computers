@@ -100,7 +100,7 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 			kdgemm(A_kernel, B_kernel, C_kernel);
 
 			// Store results into C_aux
-			from_kdgemm_C_sized(C_BLOCK_LEN, C_kernel, C_aux + cur_a_aux_pos, num_a_aux, num_slice);
+			from_kdgemm_C_sized(num_rows_AC, C_kernel, C_aux + cur_a_aux_pos, num_a_aux, num_slice);
 		}
 
 		// Accumulate results from C_aux to C
@@ -108,7 +108,7 @@ void gebp_opt1(const int M, const double* A, const int num_rows_AC, const int nu
 		{
 			for(int iter_row = 0; iter_row < num_rows_AC; ++iter_row)
 			{
-				C[iter_row + (cur_slice_pos + iter_slice_part) * M] += C_aux[iter_row + iter_slice_part * C_BLOCK_LEN];
+				C[iter_row + (cur_slice_pos + iter_slice_part) * M] += C_aux[iter_row + iter_slice_part * num_rows_AC];
 			}
 		}
 	}
