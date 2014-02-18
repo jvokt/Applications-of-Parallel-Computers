@@ -3,9 +3,9 @@
 #include "kdgemm.h"
 #include <stdio.h>
 
-#define N KERNEL_N
-#define M KERNEL_M
-#define P KERNEL_P
+#define N K_BLOCK_LEN
+#define M P_BLOCK_LEN
+#define P A_BLOCK_LEN
 
 
 /*

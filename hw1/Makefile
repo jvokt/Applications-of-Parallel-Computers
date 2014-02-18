@@ -8,8 +8,8 @@
 # Default values for macros inside 'mine' implementation
 A_BLOCK_LEN=16
 C_BLOCK_LEN=16
-K_BLOCK_LEN=16
-P_BLOCK_LEN=16
+K_BLOCK_LEN=2
+P_BLOCK_LEN=2
 
 PLATFORM=icc
 include Makefile.in.$(PLATFORM)
@@ -24,10 +24,10 @@ all:	matmul-mine matmul-basic matmul-blocked matmul-blas matmul-f2c
 
 matmul-%: $(OBJS) dgemm_%.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
-	
+
 matmul-mine: $(OBJS) kdgemm.o dgemm_mine.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
-	
+
 matmul-mine-%: $(OBJS) kdgemm.o dgemm_mine.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
