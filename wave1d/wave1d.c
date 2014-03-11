@@ -334,7 +334,7 @@ void sim_write_step(sim_t sim, FILE* fp)
 		rcounts[i] = pidx[i+1]-pidx[i];
 	}
 	MPI_Gatherv(sbuf, nlocal, MPI_DOUBLE, rbuf, rcounts, pidx, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	free(rbuff);
+	free(rbuf);
 	free(rcounts);
     for (int i = 0; i < n; ++i)
         fprintf(fp, "%g ", rbuf[i]);
