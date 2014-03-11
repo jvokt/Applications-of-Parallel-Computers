@@ -338,7 +338,7 @@ void sim_write_step(sim_t sim, FILE* fp)
 //		MPI_Barrier(MPI_COMM_WORLD);
 //		printf("\n");
 		double *rbuf;
-		int *displs, *rcounts;
+		int *rcounts;
 		rbuf = (double*) malloc(n*sizeof(double));
 		rcounts = (int*) malloc((nproc+1)*sizeof(int));
 		for (int i=0; i < nproc; ++i) {
