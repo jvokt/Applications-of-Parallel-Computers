@@ -329,6 +329,14 @@ void sim_write_step(sim_t sim, FILE* fp)
 		int n = pidx[nproc];
 		double *u = sim_get_u(sim, 0);
 		double *sbuf = &u[1];
+//		printf("From P%d: ", proc);
+//		MPI_Barrier(MPI_COMM_WORLD);
+//		for (int i=0; i < nlocal; i++)
+//		{
+//			printf("%d ",sbuf[i]);
+//		}
+//		MPI_Barrier(MPI_COMM_WORLD);
+//		printf("\n");
 		double *rbuf;
 		int *displs, *rcounts;
 		rbuf = (double*) malloc(n*sizeof(double));
@@ -337,11 +345,11 @@ void sim_write_step(sim_t sim, FILE* fp)
 			rcounts[i] = pidx[i+1]-pidx[i];
 		}
 		MPI_Gatherv(sbuf, nlocal, MPI_DOUBLE, rbuf, rcounts, pidx, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		free(rbuf);
-		free(rcounts);
 		for (int i = 0; i < n; ++i)
 			fprintf(fp, "%g ", rbuf[i]);
 		fprintf(fp, "\n");
+		free(rbuf);
+		free(rcounts);
 	}
 #else
     int n = sim->nlocal;
