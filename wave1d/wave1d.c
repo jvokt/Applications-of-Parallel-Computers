@@ -213,28 +213,33 @@ void sim_apply_bc(sim_t sim)
 		if (proc > 0 && proc < nproc-1)
 		{
 			// send to right, receive from left
-			//printf("Sendrecv to P%d from P%d", (proc+1) % nproc, (proc+nproc-1) % nproc);
 			sendbuf = u[nlocal];
+			printf("Sending %d to P%d", sendbuf, (proc+1) % nproc);
 			MPI_Sendrecv(&sendbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 1,
 					&recvbuf, 1, MPI_DOUBLE, (proc+nproc-1) % nproc, 1,
 					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			u[0] = recvbuf;
+			printf("Received %d from P%d", recvbuf, (proc+nproc-1) % nproc);
 			// send to left, receive from right
 			//printf("Sendrecv to P%d from P%d", (proc+nproc-1) % nproc, (proc+1) % nproc);
 			sendbuf = u[1];
+			printf("Sending %d to P%d", sendbuf, (proc+nproc-1) % nproc);
 			MPI_Sendrecv(&sendbuf, 1, MPI_DOUBLE, (proc+nproc-1) % nproc, 1,
 					&recvbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 1,
 					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			u[nlocal+1] = recvbuf;
+			printf("Received %d from P%d", recvbuf, (proc+1) % nproc);
 		} else if (proc == 0) {
 			// send to right
 			//printf("Send to P1");
 			sendbuf = u[nlocal];
+			printf("Sending %d to P%d", sendbuf, 1);
 			MPI_Send(&sendbuf, 1, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD);
 		} else if (proc == nproc-1) {
 			// send to left
 			//printf("Send to P%d",nproc-2);
 			sendbuf = u[1];
+			printf("Sending %d to P%d", sendbuf, nproc-2);
 			MPI_Send(&sendbuf, 1, MPI_DOUBLE, nproc-2, 1, MPI_COMM_WORLD);
 		}
     }
