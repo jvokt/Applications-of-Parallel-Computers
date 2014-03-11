@@ -339,18 +339,22 @@ void sim_write_step(sim_t sim, FILE* fp)
 //		printf("\n");
 		double *rbuf;
 		int *rcounts;
-		rbuf = (double*) malloc(n*sizeof(double));
-		rcounts = (int*) malloc((nproc+1)*sizeof(int));
-		for (int i=0; i < nproc; ++i) {
-			rcounts[i] = pidx[i+1]-pidx[i];
+		if (proc == 0) {
+			rbuf = (double*) malloc(n*sizeof(double));
+			rcounts = (int*) malloc((nproc+1)*sizeof(int));
+			for (int i=0; i < nproc; ++i) {
+				rcounts[i] = pidx[i+1]-pidx[i];
+			}
+			rcounts[nproc] = 0;
 		}
-		rcounts[nproc] = 0;
 		MPI_Gatherv(sbuf, nlocal, MPI_DOUBLE, rbuf, rcounts, pidx, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		for (int i = 0; i < n; ++i)
-			fprintf(fp, "%g ", rbuf[i]);
-		fprintf(fp, "\n");
-		free(rbuf);
-		free(rcounts);
+		if (proc == 0) {
+			for (int i = 0; i < n; ++i)
+				fprintf(fp, "%g ", rbuf[i]);
+			fprintf(fp, "\n");
+			free(rbuf);
+			free(rcounts);
+		}
 	}
 #else
     int n = sim->nlocal;
