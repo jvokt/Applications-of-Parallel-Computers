@@ -180,6 +180,7 @@ void sim_apply_bc(sim_t sim)
     if (nproc > 1) {
 		double sendbuf;
 		double recvbuf;
+/*
 		if (proc % 2 == 0 && proc < nproc-1) {
 			sendbuf = u[nlocal];
 			MPI_Sendrecv(&sendbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 0,
@@ -207,8 +208,8 @@ void sim_apply_bc(sim_t sim)
 						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			u[0] = recvbuf;
 		}
+*/
 
-/*
 		if (proc > 0 && proc < nproc-1)
 		{
 			// send to right, receive from left
@@ -236,7 +237,6 @@ void sim_apply_bc(sim_t sim)
 			sendbuf = u[1];
 			MPI_Send(&sendbuf, 1, MPI_DOUBLE, nproc-2, 1, MPI_COMM_WORLD);
 		}
-*/
     }
 #endif
 }
@@ -359,14 +359,6 @@ void sim_write_step(sim_t sim, FILE* fp)
 		int n = pidx[nproc];
 		double *u = sim_get_u(sim, 0);
 		double *sbuf = &u[1];
-//		printf("From P%d: ", proc);
-//		MPI_Barrier(MPI_COMM_WORLD);
-//		for (int i=0; i < nlocal; i++)
-//		{
-//			printf("%d ",sbuf[i]);
-//		}
-//		MPI_Barrier(MPI_COMM_WORLD);
-//		printf("\n");
 		double *rbuf;
 		int *rcounts;
 		if (proc == 0) {
