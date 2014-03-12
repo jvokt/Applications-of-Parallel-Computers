@@ -216,7 +216,7 @@ void sim_apply_bc(sim_t sim)
 //						&recvbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 0,
 //						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 //			u[nlocal+1] = recvbuf;
-		} else if (proc % 2 == 1 proc > 0) {
+		} else if (proc % 2 == 1 && proc > 0) {
 			// send u[1] to P-1
 			// receive u[0] from P-1
 			printf("P%d sending %f to P%d\n", proc, u[1], proc-1);
