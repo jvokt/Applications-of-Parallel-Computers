@@ -231,19 +231,19 @@ void sim_apply_bc(sim_t sim)
 //			u[0] = recvbuf;
 		}
 
-		if (proc % 2 == 1 && proc < nproc-1) {
-			sendbuf = u[nlocal];
-			MPI_Sendrecv(&sendbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 1,
-						&recvbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 1,
-						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			u[nlocal+1] = recvbuf;
-		} else  if (proc > 0) {
-			sendbuf = u[1];
-			MPI_Sendrecv(&sendbuf, 1, MPI_DOUBLE, (proc+nproc-1) % nproc, 1,
-						&recvbuf, 1, MPI_DOUBLE, (proc+nproc-1) % nproc, 1,
-						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			u[0] = recvbuf;
-		}
+//		if (proc % 2 == 1 && proc < nproc-1) {
+//			sendbuf = u[nlocal];
+//			MPI_Sendrecv(&sendbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 1,
+//						&recvbuf, 1, MPI_DOUBLE, (proc+1) % nproc, 1,
+//						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+//			u[nlocal+1] = recvbuf;
+//		} else  if (proc > 0) {
+//			sendbuf = u[1];
+//			MPI_Sendrecv(&sendbuf, 1, MPI_DOUBLE, (proc+nproc-1) % nproc, 1,
+//						&recvbuf, 1, MPI_DOUBLE, (proc+nproc-1) % nproc, 1,
+//						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+//			u[0] = recvbuf;
+//		}
 /*
 		if (proc > 0 && proc < nproc-1)
 		{
