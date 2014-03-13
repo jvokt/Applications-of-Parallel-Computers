@@ -9,3 +9,4 @@ ktimer
 .project
 .cproject
 *.pdf
+*.csv
