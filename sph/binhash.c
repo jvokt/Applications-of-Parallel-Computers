@@ -116,37 +116,12 @@ void hash_particles(sim_state_t* s, float h)
 		// Get the current particle
 		particle_t* cur_particle = s->part + iter_particle;
 
-		// Clear its next pointer
-		cur_particle->next = NULL;
-
 		// Get the bin id for which to add the bucket
 		unsigned bin_id = particle_bucket(cur_particle, h);
 
 		// Add the particle to the bin
-		if(hash[bin_id] == NULL)
-		{
-			// This is the first particle for the bin, set as head in hash
-			hash[bin_id] = cur_particle;
-		}
-		else
-		{
-			// This is not the first particle for the bin, add to chain
-			// by following chain to its end
-			particle_t* cur_chain_iter = hash[bin_id];
-			while(cur_chain_iter != NULL)
-			{
-				// Check if this is the last particle in the chain
-				if(cur_chain_iter->next == NULL)
-				{
-					// Last particle in the chain, add to it and finish
-					cur_chain_iter->next = cur_particle;
-					break;
-				}
-
-				// Move on to next object
-				cur_chain_iter = cur_chain_iter->next;
-			}
-		}
+		cur_particle->next = hash[bin_id];
+		hash[bin_id] = cur_particle;
 	}
 
     /* END TASK */
