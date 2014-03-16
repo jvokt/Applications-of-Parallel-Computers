@@ -65,6 +65,7 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     unsigned numbins;
     for (int i = 0; i < n; ++i) {
     	particle_t* pi = s->part+i;
+    	pi->rho += 4 * s->mass / M_PI / h3;
     	numbins = particle_neighborhood(buckets, pi, h);
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
