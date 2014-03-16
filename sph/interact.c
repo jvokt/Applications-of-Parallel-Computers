@@ -70,7 +70,8 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
-    			update_density(pi, pj, h2, C);
+    			if (pi != pj)
+    				update_density(pi, pj, h2, C);
     		}
     	}
     }
@@ -173,7 +174,8 @@ void compute_accel(sim_state_t* state, sim_param_t* params)
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
-                update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
+    			if (pi != pj)
+    				update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
     		}
     	}
     }
