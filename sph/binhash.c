@@ -33,6 +33,14 @@ unsigned particle_bucket(particle_t* p, float h)
     return zm_encode(ix & HASH_MASK, iy & HASH_MASK, iz & HASH_MASK);
 }
 
+int compare_unsigned (const void *a, const void *b)
+{
+	const unsigned* da = (const unsigned *) a;
+	const unsigned* db = (const unsigned *) b;
+
+	return (*da > *db) - (*da < *db);
+}
+
 unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 {
     /* BEGIN TASK */
@@ -82,6 +90,9 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 			}
 		}
 	}
+
+	// Sort the bins for locality
+	qsort(buckets, bucket_count, sizeof(unsigned), compare_unsigned);
 
 	// Return the number of buckets added
 	return bucket_count;
