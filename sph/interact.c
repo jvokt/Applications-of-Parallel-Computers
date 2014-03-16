@@ -13,7 +13,7 @@
 #include "binhash.h"
 
 /* Define this to use the bucketing version of the code */
-/* #define USE_BUCKETING */
+#define USE_BUCKETING
 
 /*@T
  * \subsection{Density computations}
@@ -28,8 +28,6 @@
  * the symmetry of the update ($i$ contributes to $j$ in the same
  * way that $j$ contributes to $i$).
  *@c*/
-
-#define USE_BUCKETING 1
 
 inline
 void update_density(particle_t* pi, particle_t* pj, float h2, float C)
@@ -70,7 +68,7 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
-    			if (pi != pj)
+    			if (pi < pj)
     				update_density(pi, pj, h2, C);
     		}
     	}
@@ -174,7 +172,7 @@ void compute_accel(sim_state_t* state, sim_param_t* params)
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
-    			if (pi != pj)
+    			if (pi < pj)
     				update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
     		}
     	}
