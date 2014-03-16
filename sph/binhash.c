@@ -58,8 +58,27 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 		{
 			for(unsigned iter_z = iz_start; iter_z <= iz_end; ++iter_z)
 			{
-				buckets[bucket_count] = zm_encode(iter_x & HASH_MASK, iter_y & HASH_MASK, iter_z & HASH_MASK);
-				++bucket_count;
+				// Get the current bin id
+				unsigned cur_bin_id = zm_encode(iter_x & HASH_MASK, iter_y & HASH_MASK, iter_z & HASH_MASK);;
+
+				// Check if the bin has already been added (don't double count)
+				char bin_already_added = 0;
+				for(int check_bin_iter = 0; check_bin_iter < bucket_count; ++check_bin_iter)
+				{
+					if(buckets[bucket_count] == cur_bin_id)
+					{
+						// Bin has already been added
+						bin_already_added = 1;
+						break;
+					}
+				}
+
+				// If bin has not already been added, then add it
+				if(!bin_already_added)
+				{
+					buckets[bucket_count] = cur_bin_id;
+					++bucket_count;
+				}
 			}
 		}
 	}
@@ -116,6 +135,9 @@ void hash_particles(sim_state_t* s, float h)
 					cur_chain_iter->next = cur_particle;
 					break;
 				}
+
+				// Move on to next object
+				cur_chain_iter = cur_chain_iter->next;
 			}
 		}
 	}
