@@ -29,6 +29,8 @@
  * way that $j$ contributes to $i$).
  *@c*/
 
+#define USE_BUCKETING 1
+
 inline
 void update_density(particle_t* pi, particle_t* pj, float h2, float C)
 {
@@ -60,6 +62,18 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     // Accumulate density info
 #ifdef USE_BUCKETING
     /* BEGIN TASK */
+    unsigned buckets[MAX_NBR_BINS];
+    unsigned numbins;
+    for (int i = 0; i < n; ++i) {
+    	particle_t* pi = s->part+i;
+    	numbins = particle_neighborhood(buckets, pi, h);
+    	for (int j = 0; j < numbins; ++j) {
+    		unsigned bucketid = buckets[j];
+    		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
+    			update_density(pi, pj, h2, C);
+    		}
+    	}
+    }
     /* END TASK */
 #else
     for (int i = 0; i < n; ++i) {
@@ -151,6 +165,18 @@ void compute_accel(sim_state_t* state, sim_param_t* params)
     // Accumulate forces
 #ifdef USE_BUCKETING
     /* BEGIN TASK */
+    unsigned buckets[MAX_NBR_BINS];
+    unsigned numbins;
+    for (int i = 0; i < n; ++i) {
+    	particle_t* pi = p+i;
+    	numbins = particle_neighborhood(buckets, pi, h);
+    	for (int j = 0; j < numbins; ++j) {
+    		unsigned bucketid = buckets[j];
+    		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
+                update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
+    		}
+    	}
+    }
     /* END TASK */
 #else
     for (int i = 0; i < n; ++i) {
