@@ -167,14 +167,11 @@ void compute_accel(sim_state_t* state, sim_param_t* params)
     /* BEGIN TASK */
     unsigned buckets[MAX_NBR_BINS];
     unsigned numbins;
-    printf("Step\n");
     for (int i = 0; i < n; ++i) {
-    	printf("\tParticle %d\n", i);
     	particle_t* pi = p+i;
     	numbins = particle_neighborhood(buckets, pi, h);
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
-    		printf("\t\tBucket %d\n", bucketid);
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
     			if (pi < pj)
     				update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
