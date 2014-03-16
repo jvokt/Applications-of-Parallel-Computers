@@ -93,9 +93,6 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 		}
 	}
 
-	// Sort the bins for locality
-//	qsort(buckets, bucket_count, sizeof(unsigned), compare_unsigned);
-
 	// Return the number of buckets added
 	return bucket_count;
 
