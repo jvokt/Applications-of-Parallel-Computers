@@ -54,11 +54,11 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 
 	// Get the start and end points for the bucket iteration
 	unsigned ix_start = max(1, ix) - 1;
-	unsigned ix_end = min(HASH_DIM-2, ix) + 1;
+	unsigned ix_end = ix + 1;
 	unsigned iy_start = max(1, iy) - 1;
-	unsigned iy_end = min(HASH_DIM-2, iy) + 1;
+	unsigned iy_end = iy + 1;
 	unsigned iz_start = max(1, iz) - 1;
-	unsigned iz_end = min(HASH_DIM-2, iz) + 1;
+	unsigned iz_end = iz + 1;
 
 	// Add the relevant buckets to the set
 	unsigned bucket_count = 0;
