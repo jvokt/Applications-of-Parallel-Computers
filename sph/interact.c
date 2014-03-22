@@ -53,6 +53,7 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     float h3 = h2*h;
     float h9 = h3*h3*h3;
     float C  = ( 315.0/64.0/M_PI ) * s->mass / h9;
+    float rhoAdditive = (315.0/64.0/M_PI) * s->mass / h3;
 
     // Clear densities
     for (int i = 0; i < n; ++i)
@@ -65,12 +66,15 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     unsigned numbins;
     for (int i = 0; i < n; ++i) {
     	particle_t* pi = s->part+i;
-    	pi->rho += 4 * s->mass / M_PI / h3;
+    	pi->rho += rhoAdditive;
     	numbins = particle_neighborhood(buckets, pi, h);
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
-    			if (pi < pj)
+    			if (pi < pj
+    					&& abs(pi->ix - pj->ix) <= 1
+    					&& abs(pi->iy - pj->iy) <= 1
+    					&& abs(pi->iz - pj->iz) <= 1)
     			{
     				update_density(pi, pj, h2, C);
     			}
@@ -81,7 +85,7 @@ void compute_density(sim_state_t* s, sim_param_t* params)
 #else
     for (int i = 0; i < n; ++i) {
         particle_t* pi = s->part+i;
-        pi->rho += 4 * s->mass / M_PI / h3;
+        pi->rho += (315.0/64.0/M_PI) * s->mass / h3;
         for (int j = i+1; j < n; ++j) {
             particle_t* pj = s->part+j;
             update_density(pi, pj, h2, C);
@@ -176,7 +180,10 @@ void compute_accel(sim_state_t* state, sim_param_t* params)
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
-    			if (pi < pj)
+    			if (pi < pj
+    					&& abs(pi->ix - pj->ix) <= 1
+    					&& abs(pi->iy - pj->iy) <= 1
+    					&& abs(pi->iz - pj->iz) <= 1)
     			{
     				update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
     			}

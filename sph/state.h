@@ -19,6 +19,10 @@ typedef struct particle_t {
     float vh[3];       /* Particle velocities (half step) */
     float a[3];        /* Particle accelerations */
     struct particle_t* next;  /* List link for spatial hashing */
+    unsigned ix;
+    unsigned iy;
+    unsigned iz;
+    unsigned binId;
 } particle_t;
 
 typedef struct sim_state_t {

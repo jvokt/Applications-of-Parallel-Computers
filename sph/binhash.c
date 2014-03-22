@@ -32,7 +32,11 @@ unsigned particle_bucket(particle_t* p, float h)
     unsigned ix = p->x[0]/h;
     unsigned iy = p->x[1]/h;
     unsigned iz = p->x[2]/h;
-    return encode(ix, iy, iz);
+    p->ix = ix;
+    p->iy = iy;
+    p->iz = iz;
+    p->binId = encode(ix, iy, iz);
+    return p->binId;
 }
 
 int compare_unsigned (const void *a, const void *b)
@@ -48,9 +52,9 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
     /* BEGIN TASK */
 
 	// Get the position of the particle
-	unsigned ix = p->x[0]/h;
-	unsigned iy = p->x[1]/h;
-	unsigned iz = p->x[2]/h;
+	unsigned ix = p->ix;
+	unsigned iy = p->iy;
+	unsigned iz = p->iz;
 
 	// Get the start and end points for the bucket iteration
 	unsigned ix_start = max(1, ix) - 1;
@@ -69,7 +73,15 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 			for(unsigned iter_z = iz_start; iter_z <= iz_end; ++iter_z)
 			{
 				// Get the current bin id
-				unsigned cur_bin_id = encode(iter_x, iter_y, iter_z);
+				unsigned cur_bin_id;
+				if(iter_x == ix && iter_y == iy && iter_z == iz)
+				{
+					cur_bin_id = p->binId;
+				}
+				else
+				{
+					cur_bin_id = encode(iter_x, iter_y, iter_z);
+				}
 
 				// Check if the bin has already been added (don't double count)
 				char bin_already_added = 0;
