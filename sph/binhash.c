@@ -73,15 +73,7 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 			for(unsigned iter_z = iz_start; iter_z <= iz_end; ++iter_z)
 			{
 				// Get the current bin id
-				unsigned cur_bin_id;
-				if(iter_x == ix && iter_y == iy && iter_z == iz)
-				{
-					cur_bin_id = p->binId;
-				}
-				else
-				{
-					cur_bin_id = encode(iter_x, iter_y, iter_z);
-				}
+				unsigned cur_bin_id = encode(iter_x, iter_y, iter_z);
 
 				// Check if the bin has already been added (don't double count)
 				char bin_already_added = 0;

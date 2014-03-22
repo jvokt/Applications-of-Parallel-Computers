@@ -14,7 +14,7 @@
 #include "binhash.h"
 
 /* Define this to use the bucketing version of the code */
-//#define USE_BUCKETING
+#define USE_BUCKETING
 
 /*@T
  * \subsection{Density computations}
