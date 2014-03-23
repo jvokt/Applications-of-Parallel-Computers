@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "zmorton.h"
+#include "hilbert.h"
 #include "binhash.h"
 
 #define min(a,b) (a < b ? a : b)
@@ -30,13 +31,10 @@
 static unsigned* binid_map;
 static int numBinDim;
 static int numBinDim2;
+static int numBinDim3;
 
-void particle_bucket_lookup_init(float h)
+void particle_bucket_lookup_init_zmencode()
 {
-	numBinDim = (int)(ceil(1.0 / h)*1.5);
-	numBinDim2 = numBinDim * numBinDim;
-	binid_map = malloc(sizeof(unsigned) * numBinDim * numBinDim * numBinDim);
-
 	for(int iz = 0; iz < numBinDim; ++iz)
 	{
 		for(int iy = 0; iy < numBinDim; ++iy)
@@ -47,6 +45,27 @@ void particle_bucket_lookup_init(float h)
 			}
 		}
 	}
+}
+
+void particle_bucket_lookup_init_hilbert()
+{
+	hilbert_index_create(binid_map, numBinDim, numBinDim2, numBinDim3);
+}
+
+void particle_bucket_lookup_init(float h)
+{
+	// The dimension is 1/h, but handle boundary (+1) and round up to nearest
+	// power of 2 (ceil(log2))
+	numBinDim = 1 << (int)(ceil(log2((ceil(1.0 / h) * 1.5))));
+	numBinDim2 = numBinDim * numBinDim;
+	numBinDim3 = numBinDim2 * numBinDim;
+	int total_mem = sizeof(unsigned) * numBinDim3;
+
+	// Allocate memory
+	binid_map = malloc(total_mem);
+
+//	particle_bucket_lookup_init_zmencode();
+	particle_bucket_lookup_init_hilbert();
 }
 
 void particle_bucket_lookup_cleanup()

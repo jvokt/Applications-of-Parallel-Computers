@@ -9,11 +9,11 @@ all: exe doc
 
 # =======
 
-sph.x: sph.o params.o state.o binhash.o interact.o leapfrog.o io_txt.o 
+sph.x: sph.o hilbert.o params.o state.o binhash.o interact.o leapfrog.o io_txt.o 
 	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
-sph.o: sph.c params.h state.h binhash.h interact.h leapfrog.h io.h 
-
+sph.o: sph.c hilbert.h params.h state.h binhash.h interact.h leapfrog.h io.h 
+hilbert.o: hilbert.c hilbert.h
 params.o: params.c params.h
 state.o: state.c state.h binhash.h
 binhash.o: binhash.c binhash.h state.h zmorton.h
