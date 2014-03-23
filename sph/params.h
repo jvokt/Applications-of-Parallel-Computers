@@ -13,6 +13,14 @@ typedef struct sim_param_t {
     int   nframes; /* Number of frames   */
     int   npframe; /* Steps per frame    */
     float h;       /* Particle size      */
+    float h2;
+    float h3;
+    float h9;
+    float C;
+    float rhoAdditive;
+    float C0;
+    float Cp;
+    float Cv;
     float dt;      /* Time step          */
     float rho0;    /* Reference density  */
     float k;       /* Bulk modulus       */

@@ -103,6 +103,14 @@ sim_state_t* place_particles(sim_param_t* param,
 void normalize_mass(sim_state_t* s, sim_param_t* param)
 {
     s->mass = 1;
+
+    float C = (315.0 / 64.0 / M_PI) * s->mass / param->h9;
+	param->C = C;
+	float rhoAdditive = (315.0 / 64.0 / M_PI) * s->mass / param->h3;
+	param->rhoAdditive = rhoAdditive;
+	float C0 = 45 * s->mass / M_PI / ((param->h2) * (param->h2) * param->h);
+	param->C0 = C0;
+
     hash_particles(s, param->h);
     compute_density(s, param);
     float rho0 = param->rho0;
@@ -156,9 +164,24 @@ int main(int argc, char** argv)
 	fflush(stdout);
 	particle_bucket_lookup_init(params.h);
 	printf("Complete\n");
+
 	printf("Creating dedupe flag vector for threads...  ");
 	fflush(stdout);
 	init_buffers();
+	printf("Complete\n");
+
+	printf("Precomputation for reduced redundancy...  ");
+	float h = params.h;
+	float h2 = h * h;
+	params.h2 = h2;
+	float h3 = h2 * h;
+	params.h3 = h3;
+	float h9 = h3 * h3 * h3;
+	params.h9 = h9;
+	float Cp = params.k / 2;
+	params.Cp = Cp;
+	float Cv = -1 * params.mu;
+	params.Cv = Cv;
 	printf("Complete\n");
 
     sim_state_t* state = init_particles(&params);
@@ -167,6 +190,17 @@ int main(int argc, char** argv)
     int npframe = params.npframe;
     float dt    = params.dt;
     int n       = state->n;
+
+    printf("Redoing precomputation calculations based on new mass... ");
+    fflush(stdout);
+    float C = (315.0 / 64.0 / M_PI) * state->mass / h9;
+	params.C = C;
+	float rhoAdditive = (315.0 / 64.0 / M_PI) * state->mass / h3;
+	params.rhoAdditive = rhoAdditive;
+	float C0 = 45 * state->mass / M_PI / ((h2) * (h2) * h);
+	params.C0 = C0;
+	printf("Complete\n");
+
 
     double t_start = omp_get_wtime();
 

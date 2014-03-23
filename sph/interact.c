@@ -64,10 +64,10 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 	particle_t** hash = s->hash;
 
 	float h = params->h;
-	float h2 = h * h;
-	float h3 = h2 * h;
-	float h9 = h3 * h3 * h3;
-	float C = (315.0 / 64.0 / M_PI) * s->mass / h9;
+	float h2 = params->h2;
+//	float h3 = params->h3;
+//	float h9 = params->h9;
+	float C = params->C;
 
 	// Clear densities
 	for (int i = 0; i < n; ++i)
@@ -77,7 +77,7 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 #ifdef USE_BUCKETING
 	/* BEGIN TASK */
 
-	float rhoAdditive = (315.0 / 64.0 / M_PI) * s->mass / h3;
+	float rhoAdditive = params->rhoAdditive;
 
 	unsigned buckets[MAX_NBR_BINS];
 	unsigned numbins;
@@ -170,11 +170,11 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 	// Unpack basic parameters
 	const float h = params->h;
 	const float rho0 = params->rho0;
-	const float k = params->k;
-	const float mu = params->mu;
+//	const float k = params->k;
+//	const float mu = params->mu;
 	const float g = params->g;
-	const float mass = state->mass;
-	const float h2 = h * h;
+//	const float mass = state->mass;
+	const float h2 = params->h2;
 
 	// Unpack system state
 	particle_t* p = state->part;
@@ -192,9 +192,9 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 		vec3_set(p[i].a, 0, -g, 0);
 
 	// Constants for interaction term
-	float C0 = 45 * mass / M_PI / ((h2) * (h2) * h);
-	float Cp = k / 2;
-	float Cv = -mu;
+	float C0 = params->C0;
+	float Cp = params->Cp;
+	float Cv = params->Cv;
 
 	// Accumulate forces
 #ifdef USE_BUCKETING
