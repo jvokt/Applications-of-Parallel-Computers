@@ -129,11 +129,11 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h, char* 
 
 	// Add the relevant buckets to the set
 	unsigned bucket_count = 0;
-	for(unsigned iter_x = ix_start; iter_x <= ix_end; ++iter_x)
+	for(unsigned iter_z = iz_start; iter_z <= iz_end; ++iter_z)
 	{
 		for(unsigned iter_y = iy_start; iter_y <= iy_end; ++iter_y)
 		{
-			for(unsigned iter_z = iz_start; iter_z <= iz_end; ++iter_z)
+			for(unsigned iter_x = ix_start; iter_x <= ix_end; ++iter_x)
 			{
 				// Get the current bin id
 				unsigned cur_bin_id = lookup(iter_x, iter_y, iter_z);

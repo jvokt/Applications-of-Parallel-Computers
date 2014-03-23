@@ -126,6 +126,12 @@ void normalize_mass(sim_state_t* s, sim_param_t* param)
 sim_state_t* init_particles(sim_param_t* param)
 {
     sim_state_t* s = place_particles(param, box_indicator);
+
+    printf("Creating dedupe flag vector for threads...  ");
+	fflush(stdout);
+    init_buffers(s->n);
+    printf("Complete\n");
+
     normalize_mass(s, param);
     return s;
 }
@@ -165,11 +171,6 @@ int main(int argc, char** argv)
 	particle_bucket_lookup_init(params.h);
 	printf("Complete\n");
 
-	printf("Creating dedupe flag vector for threads...  ");
-	fflush(stdout);
-	init_buffers();
-	printf("Complete\n");
-
 	printf("Precomputation for reduced redundancy...  ");
 	float h = params.h;
 	float h2 = h * h;
@@ -201,6 +202,15 @@ int main(int argc, char** argv)
 	params.C0 = C0;
 	printf("Complete\n");
 
+	printf("Initializing particle locks... ");
+	fflush(stdout);
+	for(int iter_particle = 0; iter_particle < state->n; ++iter_particle)
+	{
+		particle_t* cur_particle = state->part + iter_particle;
+		omp_init_lock(&cur_particle->lock);
+	}
+	printf("Complete\n");
+
 
     double t_start = omp_get_wtime();
 
@@ -230,6 +240,11 @@ int main(int argc, char** argv)
 
     particle_bucket_lookup_cleanup();
     cleanup_buffers();
+	for(int iter_particle = 0; iter_particle < state->n; ++iter_particle)
+	{
+		particle_t* cur_particle = state->part + iter_particle;
+		omp_destroy_lock(&cur_particle->lock);
+	}
 
     ProfilerStop();
 }

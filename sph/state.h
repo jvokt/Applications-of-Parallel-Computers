@@ -1,6 +1,8 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include <omp.h>
+
 #define STATE_HASH_SIZE 4096
 
 /*@T
@@ -23,6 +25,7 @@ typedef struct particle_t {
     unsigned iy;
     unsigned iz;
     unsigned binId;
+    omp_lock_t lock;
 } particle_t;
 
 typedef struct sim_state_t {

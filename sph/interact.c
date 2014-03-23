@@ -20,17 +20,23 @@
 /// Buffer used to store flags
 char* used_bin_id_flags;
 
-void init_buffers()
+/// Buffer used for local force accumulation
+float* forces_all;
+
+void init_buffers(int num_particles)
 {
 	int max_threads = omp_get_max_threads();
 	int total_mem = sizeof(char) * HASH_SIZE * max_threads;
 	used_bin_id_flags = malloc(total_mem);
 	memset(used_bin_id_flags, 0, total_mem);
+
+	forces_all = malloc(sizeof(float) * num_particles * 3 * max_threads);
 }
 
 void cleanup_buffers()
 {
 	free(used_bin_id_flags);
+	free(forces_all);
 }
 
 /*@T
@@ -82,15 +88,15 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 	unsigned buckets[MAX_NBR_BINS];
 	unsigned numbins;
 
+	// Get the dedupe buffer for this thread
+	int thread_id = 0;
+	char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
+
 	// Iterate over each bucket, and within each bucket each particle
 	for (int iter_bucket = 0; iter_bucket < HASH_SIZE; ++iter_bucket)
 	{
 		for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
 		{
-			// Get the dedupe buffer for this thread
-			int thread_id = 0;
-			char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
-
 			// Compute equal and opposite forces for the particle,
 			// first get neighbors
 			pi->rho += rhoAdditive;
@@ -141,7 +147,7 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 
 inline
 void update_forces(particle_t* pi, particle_t* pj, float h2, float rho0,
-		float C0, float Cp, float Cv) {
+		float C0, float Cp, float Cv, float* pia, float* pja) {
 	float dx[3];
 	vec3_diff(dx, pi->x, pj->x);
 	float r2 = vec3_len2(dx);
@@ -157,12 +163,12 @@ void update_forces(particle_t* pi, particle_t* pj, float h2, float rho0,
 		vec3_diff(dv, pi->v, pj->v);
 
 		// Equal and opposite pressure forces
-		vec3_saxpy(pi->a, wp, dx);
-		vec3_saxpy(pj->a, -wp, dx);
+		vec3_saxpy(pia, wp, dx);
+		vec3_saxpy(pja, -wp, dx);
 
 		// Equal and opposite viscosity forces
-		vec3_saxpy(pi->a, wv, dv);
-		vec3_saxpy(pj->a, -wv, dv);
+		vec3_saxpy(pia, wv, dv);
+		vec3_saxpy(pja, -wv, dv);
 	}
 }
 
@@ -187,10 +193,6 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 	// Compute density and color
 	compute_density(state, params);
 
-	// Start with gravity and surface forces
-	for (int i = 0; i < n; ++i)
-		vec3_set(p[i].a, 0, -g, 0);
-
 	// Constants for interaction term
 	float C0 = params->C0;
 	float Cp = params->Cp;
@@ -200,6 +202,25 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 #ifdef USE_BUCKETING
 	/* BEGIN TASK */
 
+	// Start with gravity and surface forces
+	for (int i = 0; i < n; ++i)
+	{
+		vec3_set(p[i].a, 0, -g, 0);
+	}
+
+	// Start multi-threaded
+
+	// Get the thread ID
+	int thread_id = 0;
+
+	// Get the appropriate forces vector and init to 0
+	float* forces = forces_all + thread_id * (state->n * 3);
+	memset(forces, 0, sizeof(float) * state->n * 3);
+
+	// Get the dedupe buffer for this thread
+	char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
+
+	// Create storage for neighbor set
 	unsigned buckets[MAX_NBR_BINS];
 	unsigned numbins;
 
@@ -208,9 +229,9 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 	{
 		for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
 		{
-			// Get the dedupe buffer for this thread
-			int thread_id = 0;
-			char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
+			// Get the position of the pi force accumulator
+			unsigned diffPosI = pi - state->part;
+			float* pia = forces + 3 * diffPosI;
 
 			// Compute equal and opposite forces for the particle,
 			// first get neighbors
@@ -223,22 +244,44 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 					// Compute forces only if appropriate
 					if (pi < pj && abs(pi->ix - pj->ix) <= 1
 							&& abs(pi->iy - pj->iy) <= 1
-							&& abs(pi->iz - pj->iz) <= 1) {
-						update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
+							&& abs(pi->iz - pj->iz) <= 1)
+					{
+						// Get the position of the pj force accumulator
+						unsigned diffPosJ = pj - state->part;
+						float* pja = forces + 3 * diffPosJ;
+
+						// Accumulate forces
+						update_forces(pi, pj, h2, rho0, C0, Cp, Cv, pia, pja);
 					}
 				}
 			}
 		}
 	}
+
+	// Apply accumulation to individual particles
+	for(int iter_particle = 0; iter_particle < state->n; ++iter_particle)
+	{
+		particle_t* cur_particle = state->part + iter_particle;
+		float* pia = forces + 3 * iter_particle;
+		omp_set_lock(&cur_particle->lock);
+		vec3_saxpy(cur_particle->a, 1, pia);
+		omp_unset_lock(&cur_particle->lock);
+	}
+
 	/* END TASK */
 #else
-for (int i = 0; i < n; ++i) {
-	particle_t* pi = p+i;
-	for (int j = i+1; j < n; ++j) {
-		particle_t* pj = p+j;
-		update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
+
+	// Start with gravity and surface forces
+	for (int i = 0; i < n; ++i)
+		vec3_set(p[i].a, 0, -g, 0);
+
+	for (int i = 0; i < n; ++i) {
+		particle_t* pi = p+i;
+		for (int j = i+1; j < n; ++j) {
+			particle_t* pj = p+j;
+			update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
+		}
 	}
-}
 #endif
 }
 
