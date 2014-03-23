@@ -162,6 +162,8 @@ int main(int argc, char** argv)
 {
 	ProfilerStart("sph-gperftools.profile");
 
+	printf("Running simulation with max threads: %d\n", omp_get_max_threads());
+
     sim_param_t params;
     if (get_params(argc, argv, &params) != 0)
         exit(-1);

@@ -23,6 +23,9 @@ char* used_bin_id_flags;
 /// Buffer used for local force accumulation
 float* forces_all;
 
+/// Buffer used for local rho accumulation
+float* rho_all;
+
 void init_buffers(int num_particles)
 {
 	int max_threads = omp_get_max_threads();
@@ -31,12 +34,14 @@ void init_buffers(int num_particles)
 	memset(used_bin_id_flags, 0, total_mem);
 
 	forces_all = malloc(sizeof(float) * num_particles * 3 * max_threads);
+	rho_all = malloc(sizeof(float) * num_particles * max_threads);
 }
 
 void cleanup_buffers()
 {
 	free(used_bin_id_flags);
 	free(forces_all);
+	free(rho_all);
 }
 
 /*@T
@@ -54,13 +59,13 @@ void cleanup_buffers()
  *@c*/
 
 inline
-void update_density(particle_t* pi, particle_t* pj, float h2, float C) {
+void update_density(particle_t* pi, particle_t* pj, float h2, float C, float* i_rho, float* j_rho) {
 	float r2 = vec3_dist2(pi->x, pj->x);
 	float z = h2 - r2;
 	if (z > 0) {
 		float rho_ij = C * z * z * z;
-		pi->rho += rho_ij;
-		pj->rho += rho_ij;
+		*i_rho += rho_ij;
+		*j_rho += rho_ij;
 	}
 }
 
@@ -75,56 +80,91 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 //	float h9 = params->h9;
 	float C = params->C;
 
-	// Clear densities
-	for (int i = 0; i < n; ++i)
-		p[i].rho = 0;
+
 
 	// Accumulate density info
 #ifdef USE_BUCKETING
 	/* BEGIN TASK */
 
+	// Clear densities to the initial value
 	float rhoAdditive = params->rhoAdditive;
+	for (int i = 0; i < n; ++i)
+		p[i].rho = rhoAdditive;
 
-	unsigned buckets[MAX_NBR_BINS];
-	unsigned numbins;
-
-	// Get the dedupe buffer for this thread
-	int thread_id = 0;
-	char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
-
-	// Iterate over each bucket, and within each bucket each particle
-	for (int iter_bucket = 0; iter_bucket < HASH_SIZE; ++iter_bucket)
+	// Start multi-threading
+#pragma omp parallel
 	{
-		for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
+		// Get the thread id and total threads for work distribution
+		int thread_id =  omp_get_thread_num();
+		int total_threads = omp_get_num_threads();
+
+		// Setup a neighbor bin store
+		unsigned buckets[MAX_NBR_BINS];
+		unsigned numbins;
+
+		// Get the rho accumulator for this thread
+		float* rho = rho_all + thread_id * s->n;
+		memset(rho, 0, sizeof(float) * s->n);
+
+		// Get the dedupe buffer for this thread
+		char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
+
+		// Iterate over each bucket, and within each bucket each particle
+		for (int iter_bucket = thread_id; iter_bucket < HASH_SIZE; iter_bucket += total_threads)
 		{
-			// Compute equal and opposite forces for the particle,
-			// first get neighbors
-			pi->rho += rhoAdditive;
-			numbins = particle_neighborhood(buckets, pi, h, usedBinID);
-			for (int j = 0; j < numbins; ++j)
+			for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
 			{
-				// Get the neighbor particles
-				unsigned bucketid = buckets[j];
-				for (particle_t* pj = hash[bucketid]; pj != NULL ; pj =
-						pj->next) {
-					// Compute density only if appropriate
-					if (pi < pj && abs(pi->ix - pj->ix) <= 1
-							&& abs(pi->iy - pj->iy) <= 1
-							&& abs(pi->iz - pj->iz) <= 1) {
-						update_density(pi, pj, h2, C);
+				unsigned diffPosI = pi - s->part;
+				float* i_rho = rho + diffPosI;
+
+				// Compute equal and opposite rho additives for the particle,
+				// first get neighbors
+				numbins = particle_neighborhood(buckets, pi, h, usedBinID);
+				for (int j = 0; j < numbins; ++j)
+				{
+					// Get the neighbor particles
+					unsigned bucketid = buckets[j];
+					for (particle_t* pj = hash[bucketid]; pj != NULL ; pj = pj->next)
+					{
+						unsigned diffPosJ = pj - s->part;
+						float* j_rho = rho + diffPosJ;
+
+						// Compute density only if appropriate
+						if (pi < pj && abs(pi->ix - pj->ix) <= 1
+								&& abs(pi->iy - pj->iy) <= 1
+								&& abs(pi->iz - pj->iz) <= 1)
+						{
+							update_density(pi, pj, h2, C, i_rho, j_rho);
+						}
 					}
 				}
 			}
 		}
+
+		// Accumulate the rho for each particle
+		for(int iter_particle = 0; iter_particle < s->n; ++iter_particle)
+		{
+			particle_t* cur_particle = s->part + iter_particle;
+			float rho_add = rho[iter_particle];
+			omp_set_lock(&cur_particle->lock);
+			cur_particle->rho += rho_add;
+			omp_unset_lock(&cur_particle->lock);
+		}
 	}
+
+
 	/* END TASK */
 #else
+	// Clear densities
+	for (int i = 0; i < n; ++i)
+		p[i].rho = 0;
+
 	for (int i = 0; i < n; ++i) {
 		particle_t* pi = s->part+i;
 		pi->rho += (315.0/64.0/M_PI) * s->mass / h3;
 		for (int j = i+1; j < n; ++j) {
 			particle_t* pj = s->part+j;
-			update_density(pi, pj, h2, C);
+			update_density(pi, pj, h2, C, &pi->rho, &pj->rho);
 		}
 	}
 #endif
@@ -185,7 +225,7 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 	// Unpack system state
 	particle_t* p = state->part;
 	particle_t** hash = state->hash;
-	int n = state->n;
+	const int n = state->n;
 
 	// Rehash the particles
 	hash_particles(state, h);
@@ -194,92 +234,94 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 	compute_density(state, params);
 
 	// Constants for interaction term
-	float C0 = params->C0;
-	float Cp = params->Cp;
-	float Cv = params->Cv;
+	const float C0 = params->C0;
+	const float Cp = params->Cp;
+	const float Cv = params->Cv;
+
+	// Start with gravity and surface forces
+	for (int i = 0; i < n; ++i)
+	{
+		vec3_set(p[i].a, 0, -g, 0);
+	}
 
 	// Accumulate forces
 #ifdef USE_BUCKETING
 	/* BEGIN TASK */
 
-	// Start with gravity and surface forces
-	for (int i = 0; i < n; ++i)
-	{
-		vec3_set(p[i].a, 0, -g, 0);
-	}
-
 	// Start multi-threaded
 
-	// Get the thread ID
-	int thread_id = 0;
-
-	// Get the appropriate forces vector and init to 0
-	float* forces = forces_all + thread_id * (state->n * 3);
-	memset(forces, 0, sizeof(float) * state->n * 3);
-
-	// Get the dedupe buffer for this thread
-	char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
-
-	// Create storage for neighbor set
-	unsigned buckets[MAX_NBR_BINS];
-	unsigned numbins;
-
 	// Iterate over each bucket, and within each bucket each particle
-	for (int iter_bucket = 0; iter_bucket < HASH_SIZE; ++iter_bucket)
+#pragma omp parallel
 	{
-		for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
+		// Get the thread ID and total threads
+		int thread_id = omp_get_thread_num();
+		int total_threads = omp_get_num_threads();
+
+		// Get the appropriate forces vector
+		float* forces = forces_all + thread_id * (state->n * 3);
+		memset(forces, 0, sizeof(float) * state->n * 3);
+
+		// Get the dedupe buffer for this thread
+		char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
+
+		// Create storage for neighbor set
+		unsigned buckets[MAX_NBR_BINS];
+		unsigned numbins;
+
+		// Process all buckets that the thread is responsible for
+		for (int iter_bucket = thread_id; iter_bucket < HASH_SIZE; iter_bucket += total_threads)
 		{
-			// Get the position of the pi force accumulator
-			unsigned diffPosI = pi - state->part;
-			float* pia = forces + 3 * diffPosI;
-
-			// Compute equal and opposite forces for the particle,
-			// first get neighbors
-			numbins = particle_neighborhood(buckets, pi, h, usedBinID);
-			for (int j = 0; j < numbins; ++j)
+			for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
 			{
-				// Get the neighbor particles
-				unsigned bucketid = buckets[j];
-				for (particle_t* pj = hash[bucketid]; pj != NULL ; pj = pj->next) {
-					// Compute forces only if appropriate
-					if (pi < pj && abs(pi->ix - pj->ix) <= 1
-							&& abs(pi->iy - pj->iy) <= 1
-							&& abs(pi->iz - pj->iz) <= 1)
-					{
-						// Get the position of the pj force accumulator
-						unsigned diffPosJ = pj - state->part;
-						float* pja = forces + 3 * diffPosJ;
+				// Get the position of the pi force accumulator
+				unsigned diffPosI = pi - state->part;
+				float* pia = forces + 3 * diffPosI;
 
-						// Accumulate forces
-						update_forces(pi, pj, h2, rho0, C0, Cp, Cv, pia, pja);
+				// Compute equal and opposite forces for the particle,
+				// first get neighbors
+				numbins = particle_neighborhood(buckets, pi, h, usedBinID);
+				for (int j = 0; j < numbins; ++j)
+				{
+					// Get the neighbor particles
+					unsigned bucketid = buckets[j];
+					for (particle_t* pj = hash[bucketid]; pj != NULL ; pj = pj->next) {
+						// Compute forces only if appropriate
+						if (pi < pj && abs(pi->ix - pj->ix) <= 1
+								&& abs(pi->iy - pj->iy) <= 1
+								&& abs(pi->iz - pj->iz) <= 1)
+						{
+							// Get the position of the pj force accumulator
+							unsigned diffPosJ = pj - state->part;
+							float* pja = forces + 3 * diffPosJ;
+
+							// Accumulate forces
+							update_forces(pi, pj, h2, rho0, C0, Cp, Cv, pia, pja);
+						}
 					}
 				}
 			}
 		}
+
+		// Accumulate values in vector
+		for (int iter_particle = 0; iter_particle < state->n; ++iter_particle)
+		{
+			particle_t* cur_particle = state->part + iter_particle;
+			float* pia = forces + 3 * iter_particle;
+			omp_set_lock(&cur_particle->lock);
+			vec3_saxpy(cur_particle->a, 1, pia);
+			omp_unset_lock(&cur_particle->lock);
+		}
 	}
 
-	// Apply accumulation to individual particles
-	for(int iter_particle = 0; iter_particle < state->n; ++iter_particle)
-	{
-		particle_t* cur_particle = state->part + iter_particle;
-		float* pia = forces + 3 * iter_particle;
-		omp_set_lock(&cur_particle->lock);
-		vec3_saxpy(cur_particle->a, 1, pia);
-		omp_unset_lock(&cur_particle->lock);
-	}
 
 	/* END TASK */
 #else
-
-	// Start with gravity and surface forces
-	for (int i = 0; i < n; ++i)
-		vec3_set(p[i].a, 0, -g, 0);
 
 	for (int i = 0; i < n; ++i) {
 		particle_t* pi = p+i;
 		for (int j = i+1; j < n; ++j) {
 			particle_t* pj = p+j;
-			update_forces(pi, pj, h2, rho0, C0, Cp, Cv);
+			update_forces(pi, pj, h2, rho0, C0, Cp, Cv, pi->a, pj->a);
 		}
 	}
 #endif
