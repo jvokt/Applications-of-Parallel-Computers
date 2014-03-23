@@ -151,6 +151,16 @@ int main(int argc, char** argv)
     sim_param_t params;
     if (get_params(argc, argv, &params) != 0)
         exit(-1);
+
+    printf("Creating bucket lookup table...  ");
+	fflush(stdout);
+	particle_bucket_lookup_init(params.h);
+	printf("Complete\n");
+	printf("Creating dedupe flag vector for threads...  ");
+	fflush(stdout);
+	init_buffers();
+	printf("Complete\n");
+
     sim_state_t* state = init_particles(&params);
     FILE* fp    = fopen(params.fname, "w");
     int nframes = params.nframes;
@@ -159,12 +169,15 @@ int main(int argc, char** argv)
     int n       = state->n;
 
     double t_start = omp_get_wtime();
+
     //write_header(fp, n);
     write_header(fp, n, nframes, params.h);
     write_frame_data(fp, n, state, NULL);
+
     compute_accel(state, &params);
     leapfrog_start(state, dt);
     check_state(state);
+
     for (int frame = 1; frame < nframes; ++frame) {
         for (int i = 0; i < npframe; ++i) {
             compute_accel(state, &params);
@@ -180,6 +193,9 @@ int main(int argc, char** argv)
 
     fclose(fp);
     free_state(state);
+
+    particle_bucket_lookup_cleanup();
+    cleanup_buffers();
 
     ProfilerStop();
 }

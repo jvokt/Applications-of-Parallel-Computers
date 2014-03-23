@@ -9,7 +9,7 @@
 #define min(a,b) (a < b ? a : b)
 #define max(a,b) (a > b ? a : b)
 #define encode(ix, iy, iz) (zm_encode(ix & HASH_MASK, iy & HASH_MASK, iz & HASH_MASK))
-
+#define lookup(ix, iy, iz) (binid_map[ix + numBinDim * iy + numBinDim2 * iz])
 /*@q
  * ====================================================================
  */
@@ -26,6 +26,50 @@
  *@c*/
 
 #define HASH_MASK (HASH_DIM-1)
+
+static unsigned* binid_map;
+static int numBinDim;
+static int numBinDim2;
+
+void particle_bucket_lookup_init(float h)
+{
+	numBinDim = (int)(ceil(1.0 / h)*1.5);
+	numBinDim2 = numBinDim * numBinDim;
+	binid_map = malloc(sizeof(unsigned) * numBinDim * numBinDim * numBinDim);
+
+	for(int iz = 0; iz < numBinDim; ++iz)
+	{
+		for(int iy = 0; iy < numBinDim; ++iy)
+		{
+			for(int ix = 0; ix < numBinDim; ++ix)
+			{
+				lookup(ix,iy,iz) = encode(ix, iy, iz);
+			}
+		}
+	}
+}
+
+void particle_bucket_lookup_cleanup()
+{
+	free(binid_map);
+}
+
+unsigned particle_bucket_lookup_spatial(unsigned ix, unsigned iy, unsigned iz)
+{
+	return lookup(ix,iy,iz);
+}
+
+unsigned particle_bucket_lookup(particle_t* p, float h)
+{
+	unsigned ix = p->x[0]/h;
+	unsigned iy = p->x[1]/h;
+	unsigned iz = p->x[2]/h;
+	p->ix = ix;
+	p->iy = iy;
+	p->iz = iz;
+	p->binId = lookup(ix,iy,iz);
+	return p->binId;
+}
 
 unsigned particle_bucket(particle_t* p, float h)
 {
@@ -73,7 +117,7 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h, char* 
 			for(unsigned iter_z = iz_start; iter_z <= iz_end; ++iter_z)
 			{
 				// Get the current bin id
-				unsigned cur_bin_id = encode(iter_x, iter_y, iter_z);
+				unsigned cur_bin_id = lookup(iter_x, iter_y, iter_z);
 
 				// If bin has not already been added, then add it
 				if(!usedBinID[cur_bin_id])
@@ -117,7 +161,7 @@ void hash_particles(sim_state_t* s, float h)
 		particle_t* cur_particle = s->part + iter_particle;
 
 		// Get the bin id for which to add the bucket
-		unsigned bin_id = particle_bucket(cur_particle, h);
+		unsigned bin_id = particle_bucket_lookup(cur_particle, h);
 
 		// Add the particle to the bin
 		cur_particle->next = hash[bin_id];

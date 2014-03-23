@@ -4,6 +4,7 @@
 #include <math.h>
 #include <assert.h>
 #include <stdio.h>
+#include <omp.h>
 
 #include "vec3.h"
 #include "zmorton.h"
@@ -15,6 +16,22 @@
 
 /* Define this to use the bucketing version of the code */
 #define USE_BUCKETING
+
+/// Buffer used to store flags
+char* used_bin_id_flags;
+
+void init_buffers()
+{
+	int max_threads = omp_get_max_threads();
+	int total_mem = sizeof(char) * HASH_SIZE * max_threads;
+	used_bin_id_flags = malloc(total_mem);
+	memset(used_bin_id_flags, 0, total_mem);
+}
+
+void cleanup_buffers()
+{
+	free(used_bin_id_flags);
+}
 
 /*@T
  * \subsection{Density computations}
@@ -62,10 +79,6 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 
 	float rhoAdditive = (315.0 / 64.0 / M_PI) * s->mass / h3;
 
-	// Bit flag for the particle neighbor, accelerates deduping
-	char usedBinID[HASH_SIZE];
-	memset(usedBinID, 0, sizeof(char) * HASH_SIZE);
-
 	unsigned buckets[MAX_NBR_BINS];
 	unsigned numbins;
 
@@ -74,6 +87,10 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 	{
 		for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
 		{
+			// Get the dedupe buffer for this thread
+			int thread_id = 0;
+			char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
+
 			// Compute equal and opposite forces for the particle,
 			// first get neighbors
 			pi->rho += rhoAdditive;
@@ -84,7 +101,7 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 				unsigned bucketid = buckets[j];
 				for (particle_t* pj = hash[bucketid]; pj != NULL ; pj =
 						pj->next) {
-					// Compute forces only if appropriate
+					// Compute density only if appropriate
 					if (pi < pj && abs(pi->ix - pj->ix) <= 1
 							&& abs(pi->iy - pj->iy) <= 1
 							&& abs(pi->iz - pj->iz) <= 1) {
@@ -183,10 +200,6 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 #ifdef USE_BUCKETING
 	/* BEGIN TASK */
 
-	// Bit flag for the particle neighbor, accelerates deduping
-	char usedBinID[HASH_SIZE];
-	memset(usedBinID, 0, sizeof(char) * HASH_SIZE);
-
 	unsigned buckets[MAX_NBR_BINS];
 	unsigned numbins;
 
@@ -195,6 +208,10 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 	{
 		for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
 		{
+			// Get the dedupe buffer for this thread
+			int thread_id = 0;
+			char* usedBinID = used_bin_id_flags + (thread_id * HASH_SIZE);
+
 			// Compute equal and opposite forces for the particle,
 			// first get neighbors
 			numbins = particle_neighborhood(buckets, pi, h, usedBinID);
