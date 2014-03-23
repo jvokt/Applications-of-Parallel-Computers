@@ -146,9 +146,12 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 		{
 			particle_t* cur_particle = s->part + iter_particle;
 			float rho_add = rho[iter_particle];
-			omp_set_lock(&cur_particle->lock);
-			cur_particle->rho += rho_add;
-			omp_unset_lock(&cur_particle->lock);
+			if(rho_add != 0)
+			{
+				omp_set_lock(&cur_particle->lock);
+				cur_particle->rho += rho_add;
+				omp_unset_lock(&cur_particle->lock);
+			}
 		}
 	}
 
@@ -307,9 +310,12 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 		{
 			particle_t* cur_particle = state->part + iter_particle;
 			float* pia = forces + 3 * iter_particle;
-			omp_set_lock(&cur_particle->lock);
-			vec3_saxpy(cur_particle->a, 1, pia);
-			omp_unset_lock(&cur_particle->lock);
+			if(pia[0] != 0 || pia[1] != 0 || pia[2] != 0)
+			{
+				omp_set_lock(&cur_particle->lock);
+				vec3_saxpy(cur_particle->a, 1, pia);
+				omp_unset_lock(&cur_particle->lock);
+			}
 		}
 	}
 
