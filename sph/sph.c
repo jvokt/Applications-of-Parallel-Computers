@@ -1,3 +1,5 @@
+//#define GPERF_DEBUG
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +8,9 @@
 #include <stdlib.h>
 #include <omp.h>
 
+#ifdef GPERF_DEBUG
 #include <gperftools/profiler.h>
+#endif
 
 #include "vec3.h"
 #include "io.h"
@@ -160,7 +164,9 @@ void check_state(sim_state_t* s)
 
 int main(int argc, char** argv)
 {
+#ifdef GPERF_DEBUG
 	ProfilerStart("sph-gperftools.profile");
+#endif
 
 	printf("Running simulation with max threads: %d\n", omp_get_max_threads());
 
@@ -248,5 +254,7 @@ int main(int argc, char** argv)
 		omp_destroy_lock(&cur_particle->lock);
 	}
 
+#ifdef GPERF_DEBUG
     ProfilerStop();
+#endif
 }
