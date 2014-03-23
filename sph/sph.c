@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <omp.h>
 
+#include <gperftools/profiler.h>
+
 #include "vec3.h"
 #include "io.h"
 #include "params.h"
@@ -144,6 +146,8 @@ void check_state(sim_state_t* s)
 
 int main(int argc, char** argv)
 {
+	ProfilerStart("sph-gperftools.profile");
+
     sim_param_t params;
     if (get_params(argc, argv, &params) != 0)
         exit(-1);
@@ -176,4 +180,6 @@ int main(int argc, char** argv)
 
     fclose(fp);
     free_state(state);
+
+    ProfilerStop();
 }

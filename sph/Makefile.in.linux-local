@@ -1,5 +1,5 @@
 # -- Compile settings for the cluster
 CC       = gcc
-CFLAGS   = -std=gnu99 -Wall -g -lprofiler -fopenmp
+CFLAGS   = -std=gnu99 -Wall -g -fopenmp
 OPTFLAGS = -O3
-LIBS     = -lm
+LIBS     = -lm -lprofiler

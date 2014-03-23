@@ -53,7 +53,6 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     float h3 = h2*h;
     float h9 = h3*h3*h3;
     float C  = ( 315.0/64.0/M_PI ) * s->mass / h9;
-    float rhoAdditive = (315.0/64.0/M_PI) * s->mass / h3;
 
     // Clear densities
     for (int i = 0; i < n; ++i)
@@ -62,12 +61,19 @@ void compute_density(sim_state_t* s, sim_param_t* params)
     // Accumulate density info
 #ifdef USE_BUCKETING
     /* BEGIN TASK */
+
+    float rhoAdditive = (315.0/64.0/M_PI) * s->mass / h3;
+
+    // Bit flag for the particle neighbor, accelerates deduping
+	char usedBinID[HASH_SIZE];
+	memset(usedBinID, 0, sizeof(char) * HASH_SIZE);
+
     unsigned buckets[MAX_NBR_BINS];
     unsigned numbins;
     for (int i = 0; i < n; ++i) {
     	particle_t* pi = s->part+i;
     	pi->rho += rhoAdditive;
-    	numbins = particle_neighborhood(buckets, pi, h);
+    	numbins = particle_neighborhood(buckets, pi, h, usedBinID);
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {
@@ -172,11 +178,16 @@ void compute_accel(sim_state_t* state, sim_param_t* params)
     // Accumulate forces
 #ifdef USE_BUCKETING
     /* BEGIN TASK */
+
+    // Bit flag for the particle neighbor, accelerates deduping
+	char usedBinID[HASH_SIZE];
+	memset(usedBinID, 0, sizeof(char) * HASH_SIZE);
+
     unsigned buckets[MAX_NBR_BINS];
     unsigned numbins;
     for (int i = 0; i < n; ++i) {
     	particle_t* pi = p+i;
-    	numbins = particle_neighborhood(buckets, pi, h);
+    	numbins = particle_neighborhood(buckets, pi, h, usedBinID);
     	for (int j = 0; j < numbins; ++j) {
     		unsigned bucketid = buckets[j];
     		for (particle_t* pj = hash[bucketid]; pj != NULL; pj = pj->next) {

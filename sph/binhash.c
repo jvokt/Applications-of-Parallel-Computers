@@ -47,7 +47,7 @@ int compare_unsigned (const void *a, const void *b)
 	return (*da > *db) - (*da < *db);
 }
 
-unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
+unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h, char* usedBinID)
 {
     /* BEGIN TASK */
 
@@ -75,26 +75,22 @@ unsigned particle_neighborhood(unsigned* buckets, particle_t* p, float h)
 				// Get the current bin id
 				unsigned cur_bin_id = encode(iter_x, iter_y, iter_z);
 
-				// Check if the bin has already been added (don't double count)
-				char bin_already_added = 0;
-				for(int check_bin_iter = 0; check_bin_iter < bucket_count; ++check_bin_iter)
-				{
-					if(buckets[check_bin_iter] == cur_bin_id)
-					{
-						// Bin has already been added
-						bin_already_added = 1;
-						break;
-					}
-				}
-
 				// If bin has not already been added, then add it
-				if(!bin_already_added)
+				if(!usedBinID[cur_bin_id])
 				{
 					buckets[bucket_count] = cur_bin_id;
 					++bucket_count;
+
+					usedBinID[cur_bin_id] = 1;
 				}
 			}
 		}
+	}
+
+	// Unmark all of the bins for future runs
+	for(int iter_bucket = 0; iter_bucket < bucket_count; ++iter_bucket)
+	{
+		usedBinID[buckets[iter_bucket]] = 0;
 	}
 
 	// Return the number of buckets added
