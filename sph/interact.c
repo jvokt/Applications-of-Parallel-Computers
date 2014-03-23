@@ -68,17 +68,28 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 
 	unsigned buckets[MAX_NBR_BINS];
 	unsigned numbins;
-	for (int i = 0; i < n; ++i) {
-		particle_t* pi = s->part + i;
-		pi->rho += rhoAdditive;
-		numbins = particle_neighborhood(buckets, pi, h, usedBinID);
-		for (int j = 0; j < numbins; ++j) {
-			unsigned bucketid = buckets[j];
-			for (particle_t* pj = hash[bucketid]; pj != NULL ; pj = pj->next) {
-				if (pi < pj && abs(pi->ix - pj->ix) <= 1
-						&& abs(pi->iy - pj->iy) <= 1
-						&& abs(pi->iz - pj->iz) <= 1) {
-					update_density(pi, pj, h2, C);
+
+	// Iterate over each bucket, and within each bucket each particle
+	for (int iter_bucket = 0; iter_bucket < HASH_SIZE; ++iter_bucket)
+	{
+		for (particle_t* pi = hash[iter_bucket]; pi != NULL ; pi = pi->next)
+		{
+			// Compute equal and opposite forces for the particle,
+			// first get neighbors
+			pi->rho += rhoAdditive;
+			numbins = particle_neighborhood(buckets, pi, h, usedBinID);
+			for (int j = 0; j < numbins; ++j)
+			{
+				// Get the neighbor particles
+				unsigned bucketid = buckets[j];
+				for (particle_t* pj = hash[bucketid]; pj != NULL ; pj =
+						pj->next) {
+					// Compute forces only if appropriate
+					if (pi < pj && abs(pi->ix - pj->ix) <= 1
+							&& abs(pi->iy - pj->iy) <= 1
+							&& abs(pi->iz - pj->iz) <= 1) {
+						update_density(pi, pj, h2, C);
+					}
 				}
 			}
 		}
@@ -191,8 +202,7 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 			{
 				// Get the neighbor particles
 				unsigned bucketid = buckets[j];
-				for (particle_t* pj = hash[bucketid]; pj != NULL ; pj =
-						pj->next) {
+				for (particle_t* pj = hash[bucketid]; pj != NULL ; pj = pj->next) {
 					// Compute forces only if appropriate
 					if (pi < pj && abs(pi->ix - pj->ix) <= 1
 							&& abs(pi->iy - pj->iy) <= 1
@@ -203,9 +213,7 @@ void compute_accel(sim_state_t* state, sim_param_t* params) {
 			}
 		}
 	}
-}
-
-/* END TASK */
+	/* END TASK */
 #else
 for (int i = 0; i < n; ++i) {
 	particle_t* pi = p+i;
