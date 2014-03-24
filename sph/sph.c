@@ -243,7 +243,7 @@ int main(int argc, char** argv)
     double t_end = omp_get_wtime();
     printf("Ran in %g seconds\n", t_end-t_start);
 
-    printf("Runtime\t%g\tParticles\t%d\tThreads\t%d\n", t_end - t_start, state->n, omp_get_max_threads());
+    printf("Runtime,%g,Particles,%d,Threads,%d\n", t_end - t_start, state->n, omp_get_max_threads());
 
     fclose(fp);
     free_state(state);
