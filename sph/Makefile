@@ -1,4 +1,4 @@
-PLATFORM=linux-local
+PLATFORM=linux
 include Makefile.in.$(PLATFORM)
 
 .PHONY: all exe doc clean realclean
