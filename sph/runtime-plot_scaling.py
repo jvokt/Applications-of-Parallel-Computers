@@ -67,13 +67,8 @@ if __name__ == "__main__":
         dataMat = np.matrix(dataFilterList)
         xVals = dataMat[:,1]
         yVals = dataMat[:,0]
-        # Form the ideal values
-        yIdeal = yVals
-        for pos in range(1,len(yVals)):
-            yIdeal[pos] = yIdeal[0] * (xVals[pos] / xVals[0])
         # Plot actual and ideal
         scalingAx.loglog(xVals, yVals, label = (str(curThreadCount) + ' Threads'))
-        scalingAx.loglog(xVals, yIdeal, label = (str(curThreadCount) + ' Threads - Ideal'), linestyle='dashed')
     scalingAx.set_title('Particle Scaling: Log-Log of Runtime vs. Number of Particles')
     scalingAx.set_xlabel('Log of Number of Particles')
     scalingAx.set_ylabel('Log of Runtime (sec.)')

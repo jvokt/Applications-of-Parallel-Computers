@@ -54,9 +54,9 @@ if __name__ == "__main__":
             'size'   : 8}
     matplotlib.rc('font', **font)
     
-    # Make the plot, first create the figure information
-    scalingFig = plt.figure(figsize=(6.5,4.5), dpi=150)
-    scalingAx = scalingFig.add_subplot(111)
+    # Make the plot of relative scaling, first create the figure information
+    relScalingFig = plt.figure(figsize=(6.5,4.5), dpi=150)
+    relScalingAx = relScalingFig.add_subplot(111)
     # Plot each line for each thread
     for curParticleCount in particleCounts:
         # Filter to only get values for line
@@ -66,18 +66,13 @@ if __name__ == "__main__":
         # Convert to matrix and get x,y values
         dataMat = np.matrix(dataFilterList)
         xVals = dataMat[:,2]
-        yVals = dataMat[:,0]
-        # Form the ideal values
-        yIdeal = yVals
-        for pos in range(1,len(yVals)):
-            yIdeal[pos] = yIdeal[0] * (xVals[0] / xVals[pos])
-        # Plot actual and ideal
-        scalingAx.plot(xVals, yVals, label = (str(curParticleCount) + ' Particles'))
-        scalingAx.plot(xVals, yIdeal, label = (str(curParticleCount) + ' Particles - Ideal'), linestyle='dashed')
-    scalingAx.set_title('Thread Scaling: Plot of Runtime vs. Number of Threads')
-    scalingAx.set_xlabel('Number of Threads')
-    scalingAx.set_ylabel('Runtime (sec.)')
-    scalingAx.legend(loc='upper right')
+        yVals = dataMat[0,0] / dataMat[:,0] 
+        # Plot relative scaling
+        relScalingAx.plot(xVals, yVals, label = (str(curParticleCount) + ' Particles'))
+    relScalingAx.set_title('Thread Scaling: Plot of Relative Runtime Speedup vs. Number of Threads')
+    relScalingAx.set_xlabel('Number of Threads')
+    relScalingAx.set_ylabel('Runtime Speedup (Relative to 1 Thread)')
+    relScalingAx.legend(loc='upper left')
     plt.savefig('runtime-plot_speedup.png', dpi=150)
     
         
