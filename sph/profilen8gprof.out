@@ -1,0 +1,241 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 88.88    367.25   367.25    94063     3.90     4.33  hash_particles
+  9.79    407.71    40.46 131295178     0.00     0.00  particle_neighborhood
+  0.69    410.54     2.83    79802     0.04     5.14  compute_accel
+  0.51    412.63     2.09    39900     0.05     0.05  leapfrog_step
+  0.10    413.03     0.40                             main
+  0.07    413.30     0.27                             compare_unsigned
+  0.00    413.30     0.00      400     0.00     0.00  write_frame_data
+  0.00    413.30     0.00        1     0.00     0.00  alloc_state
+  0.00    413.30     0.00        1     0.00     0.00  check_state
+  0.00    413.30     0.00        1     0.00     0.00  cleanup_buffers
+  0.00    413.30     0.00        1     0.00     4.33  compute_density
+  0.00    413.30     0.00        1     0.00     0.00  free_state
+  0.00    413.30     0.00        1     0.00     0.00  get_params
+  0.00    413.30     0.00        1     0.00     0.00  hilbert_index_create
+  0.00    413.30     0.00        1     0.00     0.00  init_buffers
+  0.00    413.30     0.00        1     0.00     8.67  init_particles
+  0.00    413.30     0.00        1     0.00     0.00  leapfrog_start
+  0.00    413.30     0.00        1     0.00     0.00  particle_bucket_lookup_cleanup
+  0.00    413.30     0.00        1     0.00     0.00  particle_bucket_lookup_init
+  0.00    413.30     0.00        1     0.00     0.00  write_header
+  0.00    413.30     0.00        1     0.00     0.00  zpk
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+ 
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this 
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) for 0.00% of 413.30 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     99.9    0.40  412.63                 main [1]
+                2.83  407.70   79802/79802       compute_accel [2]
+                2.09    0.00   39900/39900       leapfrog_step [5]
+                0.00    0.01       1/1           init_particles [7]
+                0.00    0.00     400/400         write_frame_data [9]
+                0.00    0.00       1/1           get_params [14]
+                0.00    0.00       1/1           hilbert_index_create [15]
+                0.00    0.00       1/1           particle_bucket_lookup_init [19]
+                0.00    0.00       1/1           write_header [20]
+                0.00    0.00       1/1           leapfrog_start [17]
+                0.00    0.00       1/1           check_state [11]
+                0.00    0.00       1/1           free_state [13]
+                0.00    0.00       1/1           cleanup_buffers [12]
+                0.00    0.00       1/1           particle_bucket_lookup_cleanup [18]
+-----------------------------------------------
+                2.83  407.70   79802/79802       main [1]
+[2]     99.3    2.83  407.70   79802         compute_accel [2]
+              367.24   40.46   94061/94063       hash_particles [3]
+-----------------------------------------------
+                0.00    0.00       1/94063       init_particles [7]
+                0.00    0.00       1/94063       compute_density [8]
+              367.24   40.46   94061/94063       compute_accel [2]
+[3]     98.6  367.25   40.46   94063         hash_particles [3]
+               40.46    0.00 131295178/131295178     particle_neighborhood [4]
+-----------------------------------------------
+               40.46    0.00 131295178/131295178     hash_particles [3]
+[4]      9.8   40.46    0.00 131295178         particle_neighborhood [4]
+-----------------------------------------------
+                2.09    0.00   39900/39900       main [1]
+[5]      0.5    2.09    0.00   39900         leapfrog_step [5]
+-----------------------------------------------
+                                                 <spontaneous>
+[6]      0.1    0.27    0.00                 compare_unsigned [6]
+-----------------------------------------------
+                0.00    0.01       1/1           main [1]
+[7]      0.0    0.00    0.01       1         init_particles [7]
+                0.00    0.00       1/94063       hash_particles [3]
+                0.00    0.00       1/1           compute_density [8]
+                0.00    0.00       1/1           alloc_state [10]
+                0.00    0.00       1/1           init_buffers [16]
+-----------------------------------------------
+                0.00    0.00       1/1           init_particles [7]
+[8]      0.0    0.00    0.00       1         compute_density [8]
+                0.00    0.00       1/94063       hash_particles [3]
+-----------------------------------------------
+                0.00    0.00     400/400         main [1]
+[9]      0.0    0.00    0.00     400         write_frame_data [9]
+-----------------------------------------------
+                0.00    0.00       1/1           init_particles [7]
+[10]     0.0    0.00    0.00       1         alloc_state [10]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[11]     0.0    0.00    0.00       1         check_state [11]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[12]     0.0    0.00    0.00       1         cleanup_buffers [12]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[13]     0.0    0.00    0.00       1         free_state [13]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[14]     0.0    0.00    0.00       1         get_params [14]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[15]     0.0    0.00    0.00       1         hilbert_index_create [15]
+                0.00    0.00       1/1           zpk [21]
+-----------------------------------------------
+                0.00    0.00       1/1           init_particles [7]
+[16]     0.0    0.00    0.00       1         init_buffers [16]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[17]     0.0    0.00    0.00       1         leapfrog_start [17]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[18]     0.0    0.00    0.00       1         particle_bucket_lookup_cleanup [18]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[19]     0.0    0.00    0.00       1         particle_bucket_lookup_init [19]
+-----------------------------------------------
+                0.00    0.00       1/1           main [1]
+[20]     0.0    0.00    0.00       1         write_header [20]
+-----------------------------------------------
+                                3936             zpk [21]
+                0.00    0.00       1/1           hilbert_index_create [15]
+[21]     0.0    0.00    0.00       1+3936    zpk [21]
+                                3936             zpk [21]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+
+Index by function name
+
+  [10] alloc_state            [14] get_params              [1] main
+  [11] check_state             [3] hash_particles         [18] particle_bucket_lookup_cleanup
+  [12] cleanup_buffers        [15] hilbert_index_create   [19] particle_bucket_lookup_init
+   [6] compare_unsigned       [16] init_buffers            [4] particle_neighborhood
+   [2] compute_accel           [7] init_particles          [9] write_frame_data
+   [8] compute_density        [17] leapfrog_start         [20] write_header
+  [13] free_state              [5] leapfrog_step          [21] zpk

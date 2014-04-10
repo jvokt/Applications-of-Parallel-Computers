@@ -17,6 +17,12 @@
 /* Define this to use the bucketing version of the code */
 #define USE_BUCKETING
 
+/* Whether to use serial or not */
+#define USE_PARALLEL
+
+/* Whether or not to use locks */
+#define USE_LOCKS
+
 /// Buffer used to store flags
 char* used_bin_id_flags;
 
@@ -92,11 +98,17 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 		p[i].rho = rhoAdditive;
 
 	// Start multi-threading
+#ifdef USE_PARALLEL
 #pragma omp parallel
 	{
 		// Get the thread id and total threads for work distribution
 		int thread_id =  omp_get_thread_num();
 		int total_threads = omp_get_num_threads();
+#else
+		// Thread ID and total threads for non parallel is 0,1
+		int thread_id = 0;
+		int total_threads = 1;
+#endif
 
 		// Setup a neighbor bin store
 		unsigned buckets[MAX_NBR_BINS];
@@ -148,12 +160,22 @@ void compute_density(sim_state_t* s, sim_param_t* params) {
 			float rho_add = rho[iter_particle];
 			if(rho_add != 0)
 			{
+#ifdef USE_PARALLEL
+#ifdef USE_LOCKS
 				omp_set_lock(&cur_particle->lock);
+#endif
+#endif
 				cur_particle->rho += rho_add;
+#ifdef USE_PARALLEL
+#ifdef USE_LOCKS
 				omp_unset_lock(&cur_particle->lock);
+#endif
+#endif
 			}
 		}
+#ifdef USE_PARALLEL
 	}
+#endif
 
 
 	/* END TASK */

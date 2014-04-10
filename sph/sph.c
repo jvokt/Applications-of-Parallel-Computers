@@ -1,4 +1,4 @@
-//#define GPERF_DEBUG
+#define GPERF_DEBUG
 
 #include <stdio.h>
 #include <stdlib.h>
