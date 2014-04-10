@@ -90,6 +90,16 @@ function choose_anchors_partial(A, k)
 end
 
 ##
+# Computes the gradient for ||Tx-b||
+function computeGradient(T, x, b)
+    # TODO
+
+    # Return the gradient
+    p = 1 # TODO
+    return p
+end
+
+##
 # Simplex-constrained QPs
 # =======================
 # 
@@ -127,8 +137,50 @@ end
 # [3]: http://dx.doi.org/10.1006/inco.1996.2612
 
 function simplex_nnls_eg(AtA,Atb,x=[])
-  # BEGIN TASK
-  # END TASK
+    # BEGIN TASK
+
+    # Compute the K value which is the num columns of AtA
+    K = size(AtA,2)
+
+    # If x has not been initialized (incorrect size), start with uniform
+    if size(x,1) != K
+        # Incorrect size, reset to uniform
+        x = Array(Float64, K)
+        fill!(x, 1.0/K)
+    end
+
+    # Compute an initial gradient
+    p = computeGradient(AtA, x, Atb)
+
+    # Run until the algorithm converges
+    isConverged = false
+    numIterations = 0
+    maxIterations = 10 # TODO
+    while !isConverged && numIterations < maxIterations
+
+        # Perform a component wise multiplicative update
+        for k = 1:K
+            # TODO
+        end
+
+        # Project onto simplex
+        # TODO
+
+        # Compute new gradient
+        pPrime = computeGradient(AtA, x, Atb)
+
+        # Test convergence based on last iteration (or initial) gradient
+        # TODO
+
+        # Increase the iteration count & keep track of gradient
+        numIterations += 1
+        p = pPrime
+    end
+
+    # Return the final simplex ci
+    return (x, numIterations)
+
+    # END TASK
 end
 
 ##
