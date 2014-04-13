@@ -173,7 +173,7 @@ function simplex_nnls_eg(AtA,Atb,x=[])
         pPrime = computeGradient(AtA, x, Atb)
 
         # Test convergence based on last iteration (or initial) gradient
-        minComponentDiff = pPrime - (minimum(a) * ones(Float64, size(pPrime))
+        minComponentDiff = pPrime - (minimum(a) * ones(Float64, size(pPrime)))
         convergeAmount = transpose(minComponentDiff) * x
         if convergeAmount < epsilon
             # Algorithm has converged
