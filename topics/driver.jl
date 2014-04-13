@@ -1,6 +1,7 @@
 # -- Driver for the anchor words
 
 include("anchor_topic.jl")
+require("anchor_topic.jl")
 
 # Load the data
 words = readcsv("yelp/words.csv")

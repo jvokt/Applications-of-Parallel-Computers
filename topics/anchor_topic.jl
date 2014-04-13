@@ -315,6 +315,30 @@ function proj_simplex(y)
   max(y-t,0)
 end
 
+function compute_A_i(AtA, AtB, s, nt, i)
+    Atb = reshape(full(AtB[:,i]), (nt,))
+
+    # Version 1: Exponentiated gradient
+    ci = proj_simplex(AtA\Atb)
+    (ci, maxiter) = simplex_nnls_eg(AtA,Atb, ci)
+
+    # Version 2: Warm-started active-set iteration
+    #ci = proj_simplex(AtA\Atb)
+    #ci = simplex_nnls_as(AtA, Atb, ci)
+
+    C = ci' .* s[i]
+
+    # Check normalization error
+    maxerr1 = abs(sum(ci)-1)
+
+    # Check error measure used in EG convergence
+    r = AtA*ci-Atb
+    phi = 2*(r.-minimum(r))'*ci
+    maxerr2 = phi[1]
+
+    # Return the tuple of values
+    return (C, maxerr1, maxerr2)
+end
 ##
 # Compute intensities
 # ===================
@@ -347,30 +371,24 @@ function compute_A(Qn, s, p)
   AtB = full(Tt*(Qn'))
   (nt,nw) = size(Tt)
   C = zeros(Float64, (nw,nt))
-  maxerr1 = 0.0
-  maxerr2 = 0.0
+
+  # Initialize error
+  maxerr1 = 0
+  maxerr2 = 0
+
+  # Use parallel pmap implementation to compute all column contributions
+  computeFun = i -> compute_A_i(AtA, AtB, s, nt, i)
+  iterVals = {i for i=1:nw}
+  outs = pmap(computeFun, iterVals)
+  # Reform parallel out to desired matrix and error values
   for i = 1:nw
-    Atb = reshape(full(AtB[:,i]), (nt,))
-
-    # Version 1: Exponentiated gradient
-    ci = proj_simplex(AtA\Atb)
-    (ci, maxiter) = simplex_nnls_eg(AtA,Atb, ci)
-
-    # Version 2: Warm-started active-set iteration
-    #ci = proj_simplex(AtA\Atb)
-    #ci = simplex_nnls_as(AtA, Atb, ci)
-
-    C[i,:] = ci' .* s[i]
-
-    # Check normalization error
-    maxerr1 = max(maxerr1, abs(sum(ci)-1))
-    
-    # Check error measure used in EG convergence
-    r = AtA*ci-Atb
-    phi = 2*(r.-minimum(r))'*ci
-    maxerr2 = max(maxerr2, phi[1])
-
+      (curC, curMaxerr1, curMaxerr2) = outs[i]
+      C[i,:] = curC
+      maxerr1 = max(maxerr1, curMaxerr1)
+      maxerr2 = max(maxerr2, curMaxerr2)
   end
+
+  # Print and finalize output
   println("Max error ", maxerr1, " ", maxerr2)
   sc = reshape(sum(C,1),nt)
   scale(C,1./sc)
