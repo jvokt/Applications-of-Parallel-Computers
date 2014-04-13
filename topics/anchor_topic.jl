@@ -138,9 +138,10 @@ function simplex_nnls_eg(AtA,Atb,x=[])
     # BEGIN TASK
 
     # Parameters for algorithm
-    eta = 1 # Learning rate
-    epsilon = 1 # Convergence terminator
-    maxTime = 1000 * 60 * 2 # Max time to run algo (in ms, 2 min)
+    eta = 1e-4 # Learning rate
+    epsilon = 1e-4 # Convergence terminator
+    maxTime = 3 # Max time to run algo (in sec, 3 sec)
+    maxIterations = 2e3 # Max number of iterations
 
     # Compute the K value which is the num columns of AtA
     K = size(AtA,2)
@@ -159,7 +160,8 @@ function simplex_nnls_eg(AtA,Atb,x=[])
     isConverged = false
     numIterations = 0
     endTime = time() + maxTime
-    while !isConverged && time() < endTime
+    convergeAmount = 0;
+    while !isConverged && time() < endTime && numIterations < maxIterations
 
         # Perform a component wise multiplicative update
         for k = 1:K
@@ -167,14 +169,17 @@ function simplex_nnls_eg(AtA,Atb,x=[])
         end
 
         # Project onto simplex
-        x = x / norm(x,1)
+        normVal = norm(x,1)
+        if normVal != 0
+            x = x / normVal
+        end
 
         # Compute new gradient
         pPrime = computeGradient(AtA, x, Atb)
 
         # Test convergence based on last iteration (or initial) gradient
-        minComponentDiff = pPrime - (minimum(a) * ones(Float64, size(pPrime)))
-        convergeAmount = transpose(minComponentDiff) * x
+        minComponentDiff = pPrime - (minimum(pPrime) * ones(Float64, size(pPrime)))
+        convergeAmount = abs((transpose(minComponentDiff) * x)[1])
         if convergeAmount < epsilon
             # Algorithm has converged
             isConverged = true
@@ -348,11 +353,13 @@ function compute_A(Qn, s, p)
     Atb = reshape(full(AtB[:,i]), (nt,))
 
     # Version 1: Exponentiated gradient
-    #(ci, maxiter) = simplex_nnls_eg(AtA,Atb)
+    ci = proj_simplex(AtA\Atb)
+    (ci, maxiter) = simplex_nnls_eg(AtA,Atb, ci)
 
     # Version 2: Warm-started active-set iteration
-    ci = proj_simplex(AtA\Atb)
-    ci = simplex_nnls_as(AtA, Atb, ci)
+    #ci = proj_simplex(AtA\Atb)
+    #ci = simplex_nnls_as(AtA, Atb, ci)
+
     C[i,:] = ci' .* s[i]
 
     # Check normalization error
