@@ -92,10 +92,8 @@ end
 ##
 # Computes the gradient for ||Tx-b||
 function computeGradient(T, x, b)
-    # TODO
-
-    # Return the gradient
-    p = 1 # TODO
+    # Compute and return the gradient as defined in writeup
+    p = 2 * transpose(T) * (T * x - b)
     return p
 end
 
@@ -139,6 +137,11 @@ end
 function simplex_nnls_eg(AtA,Atb,x=[])
     # BEGIN TASK
 
+    # Parameters for algorithm
+    eta = 1 # Learning rate
+    epsilon = 1 # Convergence terminator
+    maxIterations = 10 # Max iterations to run before convergence must occur
+
     # Compute the K value which is the num columns of AtA
     K = size(AtA,2)
 
@@ -155,22 +158,26 @@ function simplex_nnls_eg(AtA,Atb,x=[])
     # Run until the algorithm converges
     isConverged = false
     numIterations = 0
-    maxIterations = 10 # TODO
     while !isConverged && numIterations < maxIterations
 
         # Perform a component wise multiplicative update
         for k = 1:K
-            # TODO
+            x[k] = x[k] * e^(-1 * eta * p[k])
         end
 
         # Project onto simplex
-        # TODO
+        x = x / norm(x,1)
 
         # Compute new gradient
         pPrime = computeGradient(AtA, x, Atb)
 
         # Test convergence based on last iteration (or initial) gradient
-        # TODO
+        minComponentDiff = pPrime - (minimum(a) * ones(Float64, size(pPrime))
+        convergeAmount = transpose(minComponentDiff) * x
+        if convergeAmount < epsilon
+            # Algorithm has converged
+            isConverged = true
+        end
 
         # Increase the iteration count & keep track of gradient
         numIterations += 1
