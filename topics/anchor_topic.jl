@@ -140,7 +140,7 @@ function simplex_nnls_eg(AtA,Atb,x=[])
     # Parameters for algorithm
     eta = 1 # Learning rate
     epsilon = 1 # Convergence terminator
-    maxIterations = 10 # Max iterations to run before convergence must occur
+    maxTime = 1000 * 60 * 2 # Max time to run algo (in ms, 2 min)
 
     # Compute the K value which is the num columns of AtA
     K = size(AtA,2)
@@ -158,7 +158,8 @@ function simplex_nnls_eg(AtA,Atb,x=[])
     # Run until the algorithm converges
     isConverged = false
     numIterations = 0
-    while !isConverged && numIterations < maxIterations
+    endTime = time() + maxTime
+    while !isConverged && time() < endTime
 
         # Perform a component wise multiplicative update
         for k = 1:K
