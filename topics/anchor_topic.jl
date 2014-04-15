@@ -315,6 +315,7 @@ function proj_simplex(y)
   max(y-t,0)
 end
 
+# Computes one ci value for the given matrices and i parameter
 function compute_A_i(AtA, AtB, s, nt, i)
     Atb = reshape(full(AtB[:,i]), (nt,))
 
@@ -339,6 +340,21 @@ function compute_A_i(AtA, AtB, s, nt, i)
     # Return the tuple of values
     return (C, maxerr1, maxerr2)
 end
+
+# Computes a range of ci values and stores them in a tuple set
+function compute_A_i_range(AtA, AtB, s, nt, iRange)
+    outCount = 0
+    iStart = convert(Integer, iRange[1])
+    iEnd = convert(Integer, iRange[2])
+    outs = Array(Any, iEnd - iStart + 1)
+    for i = iStart:iEnd
+        outCount += 1
+        outs[outCount] = compute_A_i(AtA, AtB, s, nt, i)
+    end
+
+    return outs
+end
+
 ##
 # Compute intensities
 # ===================
@@ -376,16 +392,29 @@ function compute_A(Qn, s, p)
   maxerr1 = 0
   maxerr2 = 0
 
-  # Use parallel pmap implementation to compute all column contributions
-  computeFun = i -> compute_A_i(AtA, AtB, s, nt, i)
-  iterVals = {i for i=1:nw}
+  # Determine the number of workers, and number of words per worker
+  numWorkers = size(workers(),1)
+  numWordsPerWorker = ceil(nw / numWorkers)
+
+  # Use parallel pmap implementation to compute all column contributions using
+  # a blocked set for each worker
+  computeFun = iRange -> compute_A_i_range(AtA, AtB, s, nt, iRange)
+  iterVals = {(1 + i*numWordsPerWorker,
+               min((i+1) * numWordsPerWorker, nw))
+               for i=0:numWorkers-1}
   outs = pmap(computeFun, iterVals)
+
   # Reform parallel out to desired matrix and error values
-  for i = 1:nw
-      (curC, curMaxerr1, curMaxerr2) = outs[i]
-      C[i,:] = curC
-      maxerr1 = max(maxerr1, curMaxerr1)
-      maxerr2 = max(maxerr2, curMaxerr2)
+  curWritePos = 0
+  for i = 1:size(outs,1)
+      curOutSet = outs[i]
+      for j = 1:size(curOutSet,1)
+          (curC, curMaxerr1, curMaxerr2) = curOutSet[j]
+          curWritePos += 1
+          C[curWritePos,:] = curC
+          maxerr1 = max(maxerr1, curMaxerr1)
+          maxerr2 = max(maxerr2, curMaxerr2)
+      end
   end
 
   # Print and finalize output
