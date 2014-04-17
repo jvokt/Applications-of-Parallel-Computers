@@ -320,12 +320,12 @@ function compute_A_i(AtA, AtB, s, nt, i)
     Atb = reshape(full(AtB[:,i]), (nt,))
 
     # Version 1: Exponentiated gradient
-    #ci = proj_simplex(AtA\Atb)
-    #(ci, maxiter) = simplex_nnls_eg(AtA,Atb, ci)
+    ci = proj_simplex(AtA\Atb)
+    (ci, maxiter) = simplex_nnls_eg(AtA,Atb, ci)
 
     # Version 2: Warm-started active-set iteration
-    ci = proj_simplex(AtA\Atb)
-    ci = simplex_nnls_as(AtA, Atb, ci)
+    #ci = proj_simplex(AtA\Atb)
+    #ci = simplex_nnls_as(AtA, Atb, ci)
 
     C = ci' .* s[i]
 
