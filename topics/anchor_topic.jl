@@ -140,8 +140,8 @@ function simplex_nnls_eg(AtA,Atb,x=[])
     # Parameters for algorithm
     eta = 1e-4 # Learning rate
     epsilon = 1e-4 # Convergence terminator
-    maxTime = 3 # Max time to run algo (in sec, 3 sec)
-    maxIterations = 2e3 # Max number of iterations
+    maxTime = 2 # Max time to run algo (in sec, 3 sec)
+    maxIterations = 1e3 # Max number of iterations
 
     # Compute the K value which is the num columns of AtA
     K = size(AtA,2)
@@ -320,12 +320,12 @@ function compute_A_i(AtA, AtB, s, nt, i)
     Atb = reshape(full(AtB[:,i]), (nt,))
 
     # Version 1: Exponentiated gradient
-    ci = proj_simplex(AtA\Atb)
-    (ci, maxiter) = simplex_nnls_eg(AtA,Atb, ci)
+    #ci = proj_simplex(AtA\Atb)
+    #(ci, maxiter) = simplex_nnls_eg(AtA,Atb, ci)
 
     # Version 2: Warm-started active-set iteration
-    #ci = proj_simplex(AtA\Atb)
-    #ci = simplex_nnls_as(AtA, Atb, ci)
+    ci = proj_simplex(AtA\Atb)
+    ci = simplex_nnls_as(AtA, Atb, ci)
 
     C = ci' .* s[i]
 
